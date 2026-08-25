@@ -1,5 +1,6 @@
 import { subscribeTags, addTagRemote, deleteTagRemote, signInAdmin, signOutAdmin, onAuthChange } from "./tags-store.js";
-import { subscribeOrders } from "./orders-store.js";
+import { subscribeOrders, updateOrderStatus, ORDER_STAGES, stageIndex } from "./orders-store.js";
+import { notifyCustomerStatusUpdate, isEmailJsConfigured } from "./email-notify.js";
 import { isFirebaseConfigured } from "./firebase-config.js";
 import { compressImageToDataUrl } from "./img-utils.js";
 
@@ -152,6 +153,12 @@ function renderOrderList() {
   list.innerHTML = currentOrders.map((o, i) => {
     const when = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleString() : "";
     const filenameSafe = (o.name || "order").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    const current = stageIndex(o.status);
+    const stageButtons = ORDER_STAGES.map((stage, si) => `
+      <button type="button" class="status-stage-btn ${si === current ? "current" : ""}" data-order-id="${o.orderId || o.id}" data-stage="${stage.id}">
+        ${stage.label}
+      </button>
+    `).join("");
     return `
       <div class="order-card" style="background:rgba(255,255,255,0.04);border-radius:0.75rem;padding:1rem;">
         <div style="display:flex;justify-content:space-between;gap:0.5rem;margin-bottom:0.6rem;">
@@ -159,6 +166,7 @@ function renderOrderList() {
           <span style="font-size:0.7rem;color:rgba(201,205,211,0.4);white-space:nowrap;">${when}</span>
         </div>
 
+        <div class="order-field"><span class="order-field-label">Order ID</span><span class="order-field-value" style="color:#E8B84B;font-weight:600;">${o.orderId || o.id}</span></div>
         <div class="order-field"><span class="order-field-label">Email</span><span class="order-field-value">${o.email || "—"}</span></div>
         <div class="order-field"><span class="order-field-label">Finish</span><span class="order-field-value">${o.finish || "—"}</span></div>
         <div class="order-field"><span class="order-field-label">Tier</span><span class="order-field-value">${o.tier || "—"}</span></div>
@@ -178,6 +186,16 @@ function renderOrderList() {
             : `<span style="font-size:0.75rem;color:rgba(201,205,211,0.35);">Not attached</span>`
           }
         </div>
+
+        <div style="margin-top:0.9rem;">
+          <span class="order-field-label" style="display:block;margin-bottom:0.3rem;">Status — click to update</span>
+          <div class="status-stage-row">${stageButtons}</div>
+        </div>
+
+        <a href="mailto:${o.email || ""}?subject=${encodeURIComponent(`Your Nexaura Tag order ${o.orderId || o.id} — status update`)}&body=${encodeURIComponent(`Hi ${o.name || ""},\n\nQuick update on your order ${o.orderId || o.id}: it's now at "${ORDER_STAGES[current]?.label}".\n\nYou can check status anytime at the Track Order section of our site using your order ID.\n\n— Nexaura`)}"
+           class="order-download-link" style="display:inline-block;margin-top:0.75rem;text-decoration:none;">
+          ✉ Email customer manually (backup)
+        </a>
       </div>
     `;
   }).join("");
@@ -186,6 +204,31 @@ function renderOrderList() {
     img.addEventListener("click", () => {
       document.getElementById("order-photo-lightbox-img").src = img.dataset.full;
       document.getElementById("order-photo-lightbox").classList.add("open");
+    });
+  });
+
+  list.querySelectorAll(".status-stage-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const orderId = btn.dataset.orderId;
+      const stageId = btn.dataset.stage;
+      const order = currentOrders.find((o) => (o.orderId || o.id) === orderId);
+      const stage = ORDER_STAGES.find((s) => s.id === stageId);
+      try {
+        await updateOrderStatus(orderId, stageId);
+      } catch (err) {
+        alert(err.message || "Couldn't update status.");
+        return;
+      }
+      if (order?.email && isEmailJsConfigured()) {
+        const result = await notifyCustomerStatusUpdate({
+          toEmail: order.email,
+          customerName: order.name,
+          orderId,
+          statusLabel: stage?.label,
+          statusNote: stage?.customerNote,
+        });
+        if (!result.sent) console.warn("Auto-email to customer didn't go out:", result.reason);
+      }
     });
   });
 }

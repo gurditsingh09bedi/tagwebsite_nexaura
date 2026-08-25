@@ -20,6 +20,10 @@
     }
   }
   </script>
+  <!-- Sends the customer an email when their order's status changes — see
+       the setup comment at the top of js/email-notify.js. Works fine
+       loaded but unconfigured; just does nothing until set up. -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -183,6 +187,25 @@
     </div>
   </section>
 
+  <!-- ================= track order ================= -->
+  <section id="track-order" class="section" style="padding-top:3rem;padding-bottom:5rem;">
+    <div class="container-md" style="position:relative;">
+      <div class="reveal text-center" style="margin-bottom:2rem;">
+        <div class="mono-label" style="font-size:12px;color:rgba(252,211,77,0.6);margin-bottom:0.75rem;">Already ordered?</div>
+        <h2 class="font-display" style="font-size:1.75rem;font-weight:600;color:#fff;">Track your order</h2>
+      </div>
+
+      <div class="glass reveal" style="padding:1.5rem;">
+        <form id="track-order-form" style="display:flex;gap:0.6rem;">
+          <input class="input" id="track-order-input" placeholder="Your order ID, e.g. NX-A3F9K2" style="text-transform:uppercase;" />
+          <button type="submit" class="btn-gold" style="white-space:nowrap;padding-left:1.25rem;padding-right:1.25rem;">Track</button>
+        </form>
+        <div id="track-order-error" style="display:none;margin-top:0.75rem;font-size:0.75rem;color:#f87171;"></div>
+        <div id="track-order-result" style="display:none;margin-top:1.5rem;"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= footer ================= -->
   <footer>
     <div class="footer-row">
@@ -190,6 +213,7 @@
       <div class="footer-links">
         <a href="#lineup">Lineup</a>
         <a href="#order">Order</a>
+        <a href="#track-order">Track Order</a>
         <a href="mailto:hello@nexaura.co">Contact</a>
       </div>
     </div>

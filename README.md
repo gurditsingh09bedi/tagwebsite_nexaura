@@ -67,6 +67,53 @@ them, and check the form's Settings tab for a spam-filter toggle to turn
 down for future submissions. This doesn't affect the Orders panel above —
 that's a separate, always-reliable path regardless of what Formspree does.
 
+## Order status tracking
+
+Every order gets a short, unique **order ID** (like `NX-A3F9K2`) the
+moment it's submitted — shown to the customer on the confirmation screen
+("save this to check your order status"), and shown to you as the first
+field on that order's card in the Orders panel.
+
+Each order moves through 5 stages (defined in `js/orders-store.js`,
+`ORDER_STAGES`): **Order Placed → Payment Confirmed → Card Being Made →
+Shipped → Delivered**. In the Orders panel, click any stage name on an
+order's card to set it there — customers see this reflected instantly.
+
+**Customers can check their own status anytime** at the "Track your
+order" section near the bottom of the site — they type in their order
+ID and see exactly which stage it's at, with the same 5-step progress
+shown in your admin panel.
+
+**Notifying the customer of a status change** — happens **automatically**
+once you do the 5-minute EmailJS setup below: clicking a stage on an
+order's card both updates it and emails the customer right then, no extra
+click needed. There's also an "✉ Email customer manually" link on every
+order card as a backup / for resending, using your own email app.
+
+### Setting up automatic customer emails (EmailJS, 5 minutes, free)
+
+1. Go to https://www.emailjs.com and sign up free.
+2. **"Email Services" → "Add New Service"** → connect the
+   `nexauraconsultant@gmail.com` Gmail account. Copy the **Service ID**.
+3. **"Email Templates" → "Create New Template"**. Use these variables in
+   the body: `{{to_email}}`, `{{customer_name}}`, `{{order_id}}`,
+   `{{status_label}}`, `{{status_note}}`. Example:
+   ```
+   Hi {{customer_name}}, your order {{order_id}} is now:
+   {{status_label}} — {{status_note}}
+   ```
+   Set the template's **"To email"** field to `{{to_email}}`. Copy the
+   **Template ID**.
+4. **Account → General** → copy your **Public Key**.
+5. Open `js/email-notify.js`, paste all three values in near the top,
+   replacing the `PASTE_...` placeholders.
+6. Re-upload that one file.
+
+Free plan covers 200 emails/month — plenty for order updates. Until this
+is set up, status changes still save fine in the Orders panel and the
+tracker — customers just won't get an automatic email about it, only the
+manual "Email customer" backup link.
+
 ## Live tag management (add tags from the browser — no code editing)
 
 By default, tags live in `js/data.js` and adding one means editing that
@@ -92,15 +139,17 @@ Firebase backend (10 minutes, one time):
        }
        match /orders/{orderId} {
          allow create: if true;
-         allow read, update, delete: if request.auth != null;
+         allow get: if true;
+         allow list: if request.auth != null;
+         allow update, delete: if request.auth != null;
        }
      }
    }
    ```
-   Click **Publish**. (This means: anyone can view tags and submit an order
-   — both needed for the site to work — but only a signed-in admin can add
-   or remove a tag, and only a signed-in admin can ever read the list of
-   submitted orders back.)
+   Click **Publish**. (This means: anyone can view tags, submit an order, or
+   look up ONE specific order by its exact order ID — all needed for the
+   site to work — but only a signed-in admin can add/remove a tag, browse
+   the full list of every order, or change an order's status.)
 4. Left sidebar: **Build → Authentication → Get started → Sign-in method**
    → enable **Email/Password**.
 5. Still in Authentication: **Users** tab → **Add user** → enter

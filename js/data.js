@@ -72,8 +72,21 @@ const LIVE_EVENTS = [
 const fmtUsd = (n) => `$${n.toFixed(2)}`;
 
 // exposed as globals so app.js (a module) can read them without a bundler
+// Order tracking stages, in order. Admin moves an order through these one
+// step at a time; the customer sees the same list (with the current one
+// highlighted) when they look up their order by ID.
+const ORDER_STAGES = [
+  { id: "received", label: "Order Received", customerNote: "We've got your order and are getting it ready." },
+  { id: "payment_confirmed", label: "Payment Confirmed", customerNote: "Your payment is confirmed." },
+  { id: "in_production", label: "Card in Production", customerNote: "Your tag is being made." },
+  { id: "quality_check", label: "Quality Check", customerNote: "Your tag is going through a final check." },
+  { id: "shipped", label: "Shipped", customerNote: "Your tag is on its way." },
+  { id: "delivered", label: "Delivered", customerNote: "Your tag has been delivered." },
+];
+
 window.TAGS = TAGS;
 window.COLORWAYS = COLORWAYS;
 window.TIERS = TIERS;
 window.LIVE_EVENTS = LIVE_EVENTS;
+window.ORDER_STAGES = ORDER_STAGES;
 window.fmtUsd = fmtUsd;

@@ -1,6 +1,6 @@
 import { createTagScene } from "./scene.js";
 import { subscribeTags } from "./tags-store.js";
-import { submitOrder, ordersBackendAvailable } from "./orders-store.js";
+import { submitOrder, ordersBackendAvailable, getOrderById, ORDER_STAGES, stageIndex } from "./orders-store.js";
 import { compressImageToDataUrl } from "./img-utils.js";
 
 // Every order request opens the visitor's email app addressed here —
@@ -31,6 +31,7 @@ let TAGS_LOCAL = window.TAGS; // replaced live if a Firestore backend is configu
 const COLORWAYS_LOCAL = window.COLORWAYS;
 const TIERS_LOCAL = window.TIERS;
 const LIVE_EVENTS_LOCAL = window.LIVE_EVENTS;
+const ORDER_STAGES_LOCAL = window.ORDER_STAGES;
 const fmtUsd = window.fmtUsd;
 
 let selectedColorwayId = COLORWAYS_LOCAL[0].id;
@@ -312,16 +313,18 @@ function renderOrderPortal() {
     const message = document.getElementById("order-message").value;
     const logoFile = fileInput.files[0] || null;
 
-    // Save the order (with the photo, compressed) to the shared backend
-    // first, if one's configured — this is the durable, admin-visible
-    // record with the actual image in it, independent of whether the
-    // Formspree email step below succeeds. Best-effort: a failure here
-    // doesn't block the rest of the submit flow.
+    // Save the order (with the photo, compressed, and a unique order ID)
+    // to the shared backend first, if one's configured — this is the
+    // durable, admin-visible record with the actual image and a
+    // trackable ID, independent of whether the Formspree email step below
+    // succeeds. Best-effort: a failure here doesn't block the rest of the
+    // submit flow, it just means no order ID / tracking / photo storage.
     let orderSavedWithPhoto = false;
+    let orderId = null;
     if (ordersBackendAvailable()) {
       try {
         const logoDataUrl = logoFile ? await compressImageToDataUrl(logoFile) : null;
-        await submitOrder({
+        orderId = await submitOrder({
           name,
           email,
           finish: `${colorway.name} (${fmtUsd(colorway.price)})`,
@@ -334,6 +337,7 @@ function renderOrderPortal() {
         orderSavedWithPhoto = !!logoDataUrl;
       } catch (err) {
         console.error("Couldn't save order to the backend:", err);
+        orderId = null;
       }
     }
     const needsManualLogoEmail = !!logoFile && !orderSavedWithPhoto;
@@ -365,7 +369,7 @@ function renderOrderPortal() {
         });
 
         if (res.ok) {
-          showOrderSuccess(form, success, colorway, tier, total, true, needsManualLogoEmail, orderSavedWithPhoto);
+          showOrderSuccess(form, success, colorway, tier, total, true, needsManualLogoEmail, orderSavedWithPhoto, orderId);
         } else {
           submitBtn.disabled = false;
           updateOrderTotal();
@@ -395,14 +399,24 @@ function renderOrderPortal() {
     ].filter(Boolean);
     const mailtoLink = `mailto:${ORDER_INBOX}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
     window.location.href = mailtoLink;
-    showOrderSuccess(form, success, colorway, tier, total, false, needsManualLogoEmail, orderSavedWithPhoto);
+    showOrderSuccess(form, success, colorway, tier, total, false, needsManualLogoEmail, orderSavedWithPhoto, orderId);
   });
 
   document.getElementById("order-qty").addEventListener("input", updateOrderTotal);
 }
 
-function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, hadLogoNotSent, orderSavedWithPhoto) {
+function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, hadLogoNotSent, orderSavedWithPhoto, orderId) {
   form.style.display = "none";
+
+  const orderIdBlock = orderId
+    ? `
+      <div style="margin:1rem auto 0;max-width:16rem;border-radius:0.75rem;border:1px solid rgba(232,184,75,0.35);background:rgba(232,184,75,0.08);padding:0.9rem;">
+        <div class="mono-label" style="font-size:9px;color:rgba(201,205,211,0.5);margin-bottom:0.3rem;">Your order ID — save this</div>
+        <div class="font-display" style="font-size:1.4rem;font-weight:700;color:#E8B84B;letter-spacing:0.05em;">${orderId}</div>
+        <div style="margin-top:0.5rem;font-size:0.7rem;color:rgba(201,205,211,0.5);">Use it below to check your order status anytime.</div>
+      </div>
+    `
+    : "";
 
   const emailLogoButton = hadLogoNotSent
     ? `
@@ -425,6 +439,7 @@ function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, ha
         ${hadLogoNotSent ? " Your attached photo couldn't be included automatically — send it directly below." : ""}
         ${orderSavedWithPhoto ? " Your attached photo is saved with this order." : ""}
       </p>
+      ${orderIdBlock}
       ${emailLogoButton}
     `
     : `
@@ -435,6 +450,7 @@ function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, ha
         ${colorway.name} · ${tier.name} · ${fmtUsd(total)} total.
         ${orderSavedWithPhoto ? " Your attached photo is saved with this order." : ""}
       </p>
+      ${orderIdBlock}
       ${emailLogoButton}
     `;
   success.style.display = "block";
@@ -478,6 +494,77 @@ function initLiveActivity() {
   setTimeout(cycle, 2200);
 }
 
+// ---------- track order ----------
+function renderStageTracker(order) {
+  const current = stageIndex(order.status);
+  const steps = ORDER_STAGES.map((stage, i) => {
+    const done = i < current;
+    const active = i === current;
+    return `
+      <div class="track-step ${done ? "done" : ""} ${active ? "active" : ""}">
+        <div class="track-step-dot">${done ? "✓" : i + 1}</div>
+        <div class="track-step-label">${stage.label}</div>
+      </div>
+    `;
+  }).join("");
+
+  const currentStage = ORDER_STAGES[current];
+  return `
+    <div class="glass-strong" style="padding:1.5rem;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;">
+        <div>
+          <div class="mono-label" style="font-size:9px;color:rgba(201,205,211,0.45);">Order ${order.orderId || order.id}</div>
+          <div style="font-size:1rem;font-weight:600;color:#fff;margin-top:0.2rem;">${order.finish || ""} · ${order.tier || ""}</div>
+        </div>
+        <span class="price-badge">${order.total || ""}</span>
+      </div>
+      <div class="track-stepper">${steps}</div>
+      <p style="margin-top:1.25rem;font-size:0.8rem;color:rgba(201,205,211,0.6);">${currentStage?.customerNote || ""}</p>
+    </div>
+  `;
+}
+
+function initTrackOrder() {
+  const form = document.getElementById("track-order-form");
+  const input = document.getElementById("track-order-input");
+  const errorEl = document.getElementById("track-order-error");
+  const resultEl = document.getElementById("track-order-result");
+  if (!form) return;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorEl.style.display = "none";
+    resultEl.style.display = "none";
+    const id = input.value.trim();
+    if (!id) return;
+
+    if (!ordersBackendAvailable()) {
+      errorEl.textContent = "Order tracking isn't set up on this site yet.";
+      errorEl.style.display = "block";
+      return;
+    }
+
+    const btn = form.querySelector("button");
+    btn.disabled = true;
+    btn.textContent = "Looking up...";
+    try {
+      const order = await getOrderById(id);
+      if (!order) {
+        errorEl.textContent = "No order found with that ID — double-check and try again.";
+        errorEl.style.display = "block";
+      } else {
+        resultEl.innerHTML = renderStageTracker(order);
+        resultEl.style.display = "block";
+      }
+    } catch (err) {
+      errorEl.textContent = "Couldn't look that up right now — try again in a moment.";
+      errorEl.style.display = "block";
+    }
+    btn.disabled = false;
+    btn.textContent = "Track";
+  });
+}
+
 // admin panel open/close/login/CRUD logic lives entirely in js/admin.js now,
 // loaded as its own module from index.html — it owns the toggle/close
 // buttons so there's exactly one listener on each.
@@ -493,6 +580,7 @@ renderPricing();
 renderOrderPortal();
 initLiveActivity();
 initScrollReveal();
+initTrackOrder();
 
 // Tags (and the rotating 3D cards + Lineup grid built from them) come from
 // Firestore if a backend is configured, otherwise from the local js/data.js
