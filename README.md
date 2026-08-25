@@ -36,34 +36,36 @@ Everything editable lives in **`js/data.js`** — one file, plain arrays:
 Edit the array, save, re-upload just `js/data.js`, refresh the page. No
 build, nothing else to touch.
 
-## Receiving order requests (with photo/logo attachments)
+## Receiving orders (with photos) and adding tags
 
-The Order form sends requests to **nexauraconsultant@gmail.com** via
-Formspree (already set up — endpoint is in `js/app.js`). Text details
-(name, email, finish, tier, total, message) reach the inbox reliably.
+Both of these live in the same place: the ⚙ **Manage** panel on the live
+site (bottom-right), once you've done the one-time Firebase setup below.
+Sign in there and you'll see two tabs:
 
-**Attached logos/photos currently do NOT come through** — Formspree's
-**free plan rejects any submission that includes a file** with the error
-`"File Uploads Not Permitted"`. The site already handles this gracefully:
-if someone attaches a photo, it's left out of what's sent (with a note in
-the email saying one was attached) rather than the whole submission
-failing. The Order form shows a small banner explaining this.
+- **Orders** — every order ever submitted, newest first: name, email,
+  chosen finish/tier, total, message, and **the actual attached photo**
+  (if they attached one) shown right there. This is the reliable, always-
+  works way to see photos — it doesn't depend on email or Formspree at
+  all, so it's unaffected by the attachment limitation below.
+- **Tags** — add/remove the tags shown on the rotating 3D cards and the
+  Lineup grid (same as before).
 
-**To actually receive attached photos, upgrade the Formspree plan**
-(their paid tiers support file uploads) — once upgraded, re-enable sending
-the file in `js/app.js`: find the `submit` handler's comment about
-`"File Uploads Not Permitted"` and swap the `note` line back to
-`data.append("logo", logoFile)`.
+**Email notifications still happen too, separately** — the Order form
+also sends a text summary (name, email, finish, tier, total) to
+**nexauraconsultant@gmail.com** via Formspree, so you get a heads-up email
+per order even before opening the Orders panel. **Attached photos don't
+come through this email** — Formspree's free plan rejects any submission
+that includes a file — but that's fine, since the Orders panel already has
+the photo reliably. If someone attaches a photo, the confirmation screen
+also gives them a one-tap "email it directly" option as a backup.
 
-If you'd rather not pay for Formspree just for this, the `mailto:`
-fallback (used automatically if `FORMSPREE_ENDPOINT` is ever unset) has
-the same limitation for a different reason — plain email links can't carry
-files at all either way.
-
-Formspree also keeps every submission in its own dashboard (formspree.io,
-"Submissions" tab) — so once it's set up, you get both: an email per order
-**and** one place online where every order ever submitted is listed. No
-extra work needed for that part beyond the Formspree setup above.
+**If Formspree emails aren't arriving:** log into formspree.io and check
+the **Spam** tab on your form (not just Inbox) — Formspree sometimes
+flags legitimate AJAX submissions as spam, which silently stops the email
+notification. Mark any real orders found there as "Not spam" to release
+them, and check the form's Settings tab for a spam-filter toggle to turn
+down for future submissions. This doesn't affect the Orders panel above —
+that's a separate, always-reliable path regardless of what Formspree does.
 
 ## Live tag management (add tags from the browser — no code editing)
 
@@ -88,11 +90,17 @@ Firebase backend (10 minutes, one time):
          allow read: if true;
          allow write: if request.auth != null;
        }
+       match /orders/{orderId} {
+         allow create: if true;
+         allow read, update, delete: if request.auth != null;
+       }
      }
    }
    ```
-   Click **Publish**. (This means: anyone can view tags — needed for the
-   site to work — but only a signed-in admin can add or remove one.)
+   Click **Publish**. (This means: anyone can view tags and submit an order
+   — both needed for the site to work — but only a signed-in admin can add
+   or remove a tag, and only a signed-in admin can ever read the list of
+   submitted orders back.)
 4. Left sidebar: **Build → Authentication → Get started → Sign-in method**
    → enable **Email/Password**.
 5. Still in Authentication: **Users** tab → **Add user** → enter

@@ -1,20 +1,10 @@
-import { firebaseConfig, isFirebaseConfigured } from "./firebase-config.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { db, auth } from "./firebase-init.js";
 import {
-  getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc, query, orderBy, serverTimestamp,
+  collection, onSnapshot, addDoc, deleteDoc, doc, query, orderBy, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import {
-  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+  signInWithEmailAndPassword, signOut, onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-let db = null;
-let auth = null;
-
-if (isFirebaseConfigured()) {
-  const app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  auth = getAuth(app);
-}
 
 export function backendAvailable() {
   return !!db;
@@ -22,8 +12,7 @@ export function backendAvailable() {
 
 // Calls onChange(tags, isLive) once immediately and again every time the
 // tags collection changes. isLive tells the caller whether this came from
-// Firestore (true) or the local js/data.js fallback (false) — used to show
-// a small "not connected" hint in the admin panel.
+// Firestore (true) or the local js/data.js fallback (false).
 export function subscribeTags(onChange) {
   if (!db) {
     onChange(window.TAGS, false);
@@ -66,7 +55,6 @@ export function signOutAdmin() {
   return signOut(auth);
 }
 
-// Calls callback(user | null) once immediately and again on every sign-in/out.
 export function onAuthChange(callback) {
   if (!auth) {
     callback(null);

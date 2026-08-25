@@ -1,5 +1,7 @@
 import { createTagScene } from "./scene.js";
 import { subscribeTags } from "./tags-store.js";
+import { submitOrder, ordersBackendAvailable } from "./orders-store.js";
+import { compressImageToDataUrl } from "./img-utils.js";
 
 // Every order request opens the visitor's email app addressed here —
 // change this if the inbox should ever be different.
@@ -310,6 +312,32 @@ function renderOrderPortal() {
     const message = document.getElementById("order-message").value;
     const logoFile = fileInput.files[0] || null;
 
+    // Save the order (with the photo, compressed) to the shared backend
+    // first, if one's configured — this is the durable, admin-visible
+    // record with the actual image in it, independent of whether the
+    // Formspree email step below succeeds. Best-effort: a failure here
+    // doesn't block the rest of the submit flow.
+    let orderSavedWithPhoto = false;
+    if (ordersBackendAvailable()) {
+      try {
+        const logoDataUrl = logoFile ? await compressImageToDataUrl(logoFile) : null;
+        await submitOrder({
+          name,
+          email,
+          finish: `${colorway.name} (${fmtUsd(colorway.price)})`,
+          tier: `${tier.name} (${fmtUsd(tier.price)})`,
+          quantity: qty,
+          total: fmtUsd(total),
+          message: message || null,
+          logo: logoDataUrl,
+        });
+        orderSavedWithPhoto = !!logoDataUrl;
+      } catch (err) {
+        console.error("Couldn't save order to the backend:", err);
+      }
+    }
+    const needsManualLogoEmail = !!logoFile && !orderSavedWithPhoto;
+
     if (isFormspreeConfigured()) {
       // Sends the whole thing — including the attached logo/photo — to
       // Formspree, which forwards it straight to ORDER_INBOX by email.
@@ -324,13 +352,10 @@ function renderOrderPortal() {
         data.append("quantity", qty);
         data.append("total", fmtUsd(total));
         if (message) data.append("message", message);
-        // NOTE: the free Formspree plan rejects the whole submission if a
-        // file is attached ("File Uploads Not Permitted"), so the logo/photo
-        // is never sent here — just a note that one was attached. To
-        // actually receive attachments, upgrade the Formspree plan (see
-        // README) and this can go back to attaching logoFile directly.
-        if (logoFile) {
-          data.append("note", `They attached a logo/photo (${logoFile.name}) in the form — Formspree's free plan doesn't accept file attachments, so it wasn't included here. Reply to ask them to send it directly, or upgrade Formspree to receive attachments automatically.`);
+        if (needsManualLogoEmail) {
+          data.append("note", `They attached a logo/photo (${logoFile.name}) in the form that couldn't be included here — ask them to send it directly.`);
+        } else if (orderSavedWithPhoto) {
+          data.append("note", "Their attached logo/photo is saved with this order in the Orders dashboard.");
         }
 
         const res = await fetch(FORMSPREE_ENDPOINT, {
@@ -340,7 +365,7 @@ function renderOrderPortal() {
         });
 
         if (res.ok) {
-          showOrderSuccess(form, success, colorway, tier, total, true, !!logoFile);
+          showOrderSuccess(form, success, colorway, tier, total, true, needsManualLogoEmail, orderSavedWithPhoto);
         } else {
           submitBtn.disabled = false;
           updateOrderTotal();
@@ -370,13 +395,13 @@ function renderOrderPortal() {
     ].filter(Boolean);
     const mailtoLink = `mailto:${ORDER_INBOX}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
     window.location.href = mailtoLink;
-    showOrderSuccess(form, success, colorway, tier, total, false);
+    showOrderSuccess(form, success, colorway, tier, total, false, needsManualLogoEmail, orderSavedWithPhoto);
   });
 
   document.getElementById("order-qty").addEventListener("input", updateOrderTotal);
 }
 
-function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, hadLogoNotSent) {
+function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, hadLogoNotSent, orderSavedWithPhoto) {
   form.style.display = "none";
 
   const emailLogoButton = hadLogoNotSent
@@ -398,6 +423,7 @@ function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, ha
       <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">
         ${colorway.name} · ${tier.name} · ${fmtUsd(total)} total — sent straight to Nexaura.
         ${hadLogoNotSent ? " Your attached photo couldn't be included automatically — send it directly below." : ""}
+        ${orderSavedWithPhoto ? " Your attached photo is saved with this order." : ""}
       </p>
       ${emailLogoButton}
     `
@@ -407,7 +433,9 @@ function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, ha
       <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">
         Your email app should have opened with the request filled in — hit send there to reach Nexaura.
         ${colorway.name} · ${tier.name} · ${fmtUsd(total)} total.
+        ${orderSavedWithPhoto ? " Your attached photo is saved with this order." : ""}
       </p>
+      ${emailLogoButton}
     `;
   success.style.display = "block";
 }

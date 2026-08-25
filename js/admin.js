@@ -1,5 +1,7 @@
 import { subscribeTags, addTagRemote, deleteTagRemote, signInAdmin, signOutAdmin, onAuthChange } from "./tags-store.js";
+import { subscribeOrders } from "./orders-store.js";
 import { isFirebaseConfigured } from "./firebase-config.js";
+import { compressImageToDataUrl } from "./img-utils.js";
 
 const overlay = document.getElementById("admin-overlay");
 const toggleBtn = document.getElementById("admin-toggle");
@@ -17,12 +19,21 @@ function showPanel(panel) {
   panel.style.display = "block";
 }
 
+// ---------- tags ----------
 let currentTags = [];
 let tagsAreLive = false;
 subscribeTags((tags, isLive) => {
   currentTags = tags;
   tagsAreLive = isLive;
   renderTagList();
+});
+
+// ---------- orders ----------
+let currentOrders = [];
+subscribeOrders((orders) => {
+  currentOrders = orders;
+  renderOrderList();
+  updateOrdersBadge();
 });
 
 if (!isFirebaseConfigured()) {
@@ -34,6 +45,7 @@ if (!isFirebaseConfigured()) {
       const who = document.getElementById("admin-signed-in-as");
       if (who) who.textContent = user.email;
       renderTagList();
+      renderOrderList();
     } else {
       showPanel(loginEl);
     }
@@ -56,6 +68,31 @@ document.getElementById("admin-login-form")?.addEventListener("submit", async (e
 
 document.getElementById("admin-signout")?.addEventListener("click", () => signOutAdmin());
 
+// ---------- tab switching (Tags / Orders) inside the dashboard ----------
+const tabTags = document.getElementById("admin-tab-tags");
+const tabOrders = document.getElementById("admin-tab-orders");
+const panelTags = document.getElementById("admin-panel-tags");
+const panelOrders = document.getElementById("admin-panel-orders");
+
+function updateOrdersBadge() {
+  const badge = document.getElementById("admin-orders-badge");
+  if (badge) badge.textContent = currentOrders.length ? String(currentOrders.length) : "";
+}
+
+tabTags?.addEventListener("click", () => {
+  tabTags.classList.add("admin-tab-active");
+  tabOrders.classList.remove("admin-tab-active");
+  panelTags.style.display = "block";
+  panelOrders.style.display = "none";
+});
+tabOrders?.addEventListener("click", () => {
+  tabOrders.classList.add("admin-tab-active");
+  tabTags.classList.remove("admin-tab-active");
+  panelOrders.style.display = "block";
+  panelTags.style.display = "none";
+});
+
+// ---------- render: tags ----------
 function renderTagList() {
   const list = document.getElementById("admin-tag-list");
   if (!list) return;
@@ -84,13 +121,47 @@ function renderTagList() {
   });
 }
 
-// logo upload -> resized/compressed data URL, same approach as the order form
+// ---------- render: orders ----------
+function renderOrderList() {
+  const list = document.getElementById("admin-order-list");
+  if (!list) return;
+  if (!currentOrders.length) {
+    list.innerHTML = `<div style="font-size:0.75rem;color:rgba(201,205,211,0.4);">No orders yet.</div>`;
+    return;
+  }
+  list.innerHTML = currentOrders.map((o) => {
+    const when = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleString() : "";
+    return `
+      <div style="background:rgba(255,255,255,0.04);border-radius:0.75rem;padding:0.9rem;">
+        <div style="display:flex;gap:0.75rem;">
+          ${o.logo
+            ? `<img src="${o.logo}" alt="" style="height:3.5rem;width:3.5rem;border-radius:0.5rem;object-fit:cover;flex-shrink:0;" />`
+            : `<div style="height:3.5rem;width:3.5rem;border-radius:0.5rem;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem;">👤</div>`
+          }
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;gap:0.5rem;">
+              <span style="font-size:0.85rem;font-weight:600;color:#fff;">${o.name || "(no name)"}</span>
+              <span style="font-size:0.7rem;color:rgba(201,205,211,0.4);white-space:nowrap;">${when}</span>
+            </div>
+            <div style="font-size:0.75rem;color:rgba(201,205,211,0.6);">${o.email || ""}</div>
+            <div style="margin-top:0.35rem;font-size:0.75rem;color:rgba(232,184,75,0.9);">
+              ${o.finish || ""} · ${o.tier || ""} · qty ${o.quantity || 1} · ${o.total || ""}
+            </div>
+            ${o.message ? `<div style="margin-top:0.35rem;font-size:0.75rem;color:rgba(201,205,211,0.5);">"${o.message}"</div>` : ""}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// ---------- add-tag logo upload ----------
 const dropzone = document.getElementById("admin-dropzone");
 const fileInput = document.getElementById("admin-logo-input");
 let pendingLogoDataUrl = "";
 
 dropzone?.addEventListener("click", () => fileInput.click());
-fileInput?.addEventListener("change", () => {
+fileInput?.addEventListener("change", async () => {
   const file = fileInput.files[0];
   if (!file) return;
   if (file.size > 5 * 1024 * 1024) {
@@ -98,23 +169,13 @@ fileInput?.addEventListener("change", () => {
     fileInput.value = "";
     return;
   }
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      const maxDim = 480;
-      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      pendingLogoDataUrl = canvas.toDataURL(file.type === "image/png" ? "image/png" : "image/jpeg", 0.85);
-      dropzone.querySelector(".dz-preview").innerHTML = `<img src="${pendingLogoDataUrl}" alt="" />`;
-      dropzone.querySelector(".hint").textContent = file.name;
-    };
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
+  try {
+    pendingLogoDataUrl = await compressImageToDataUrl(file);
+    dropzone.querySelector(".dz-preview").innerHTML = `<img src="${pendingLogoDataUrl}" alt="" />`;
+    dropzone.querySelector(".hint").textContent = file.name;
+  } catch (err) {
+    alert(err.message || "Couldn't read that image.");
+  }
 });
 
 document.getElementById("admin-add-form")?.addEventListener("submit", async (e) => {

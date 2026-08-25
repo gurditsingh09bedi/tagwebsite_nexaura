@@ -5,12 +5,12 @@
 // ============================================================
 
 export const firebaseConfig = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_AUTH_DOMAIN",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_STORAGE_BUCKET",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID",
+  apiKey: "AIzaSyDFnX4VZCNztUlGkQlAV4xZmDs2WMVX0lc",
+  authDomain: "nexaura-tags.firebaseapp.com",
+  projectId: "nexaura-tags",
+  storageBucket: "nexaura-tags.firebasestorage.app",
+  messagingSenderId: "125255888190",
+  appId: "1:125255888190:web:dff5a397d15c45a46a906f",
 };
 
 export function isFirebaseConfigured() {

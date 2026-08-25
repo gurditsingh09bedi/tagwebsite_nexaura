@@ -245,27 +245,39 @@
           <button id="admin-signout" style="background:none;border:none;color:#E8B84B;font-size:0.75rem;">Sign out</button>
         </div>
 
-        <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(201,205,211,0.4);margin-bottom:0.5rem;">Current tags</div>
-        <div id="admin-tag-list" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.75rem;"></div>
+        <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,0.08);">
+          <button type="button" id="admin-tab-tags" class="admin-tab admin-tab-active">Tags</button>
+          <button type="button" id="admin-tab-orders" class="admin-tab">Orders <span id="admin-orders-badge" class="admin-tab-badge"></span></button>
+        </div>
 
-        <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(201,205,211,0.4);margin-bottom:0.75rem;">Add a tag</div>
-        <form id="admin-add-form">
-          <input required class="input" placeholder="Name" id="admin-name" style="margin-bottom:0.6rem;" />
-          <input class="input" placeholder="Tagline" id="admin-tagline" style="margin-bottom:0.6rem;" />
-          <textarea class="input" placeholder="Description" id="admin-description" rows="2" style="margin-bottom:0.6rem;resize:none;"></textarea>
-          <input class="input" placeholder="Live URL (https://...)" id="admin-url" style="margin-bottom:0.6rem;" />
-          <div style="display:flex;gap:0.6rem;margin-bottom:0.6rem;">
-            <input class="input" placeholder="Accent color e.g. #22D3EE" id="admin-accent" value="#E8B84B" />
-            <input class="input" placeholder="Base color e.g. #0a1a2e" id="admin-basecolor" value="#16181b" />
-          </div>
-          <div class="dropzone" id="admin-dropzone" style="margin-bottom:0.75rem;">
-            <div class="dz-preview"><div class="placeholder">📎</div></div>
-            <div class="hint">Click to attach a logo (optional)</div>
-            <input type="file" accept="image/*" id="admin-logo-input" style="display:none;" />
-          </div>
-          <div id="admin-add-error" style="display:none;font-size:0.75rem;color:#f87171;margin-bottom:0.75rem;"></div>
-          <button type="submit" class="btn-gold" style="width:100%;" id="admin-add-btn">Add tag</button>
-        </form>
+        <div id="admin-panel-tags">
+          <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(201,205,211,0.4);margin-bottom:0.5rem;">Current tags</div>
+          <div id="admin-tag-list" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.75rem;"></div>
+
+          <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(201,205,211,0.4);margin-bottom:0.75rem;">Add a tag</div>
+          <form id="admin-add-form">
+            <input required class="input" placeholder="Name" id="admin-name" style="margin-bottom:0.6rem;" />
+            <input class="input" placeholder="Tagline" id="admin-tagline" style="margin-bottom:0.6rem;" />
+            <textarea class="input" placeholder="Description" id="admin-description" rows="2" style="margin-bottom:0.6rem;resize:none;"></textarea>
+            <input class="input" placeholder="Live URL (https://...)" id="admin-url" style="margin-bottom:0.6rem;" />
+            <div style="display:flex;gap:0.6rem;margin-bottom:0.6rem;">
+              <input class="input" placeholder="Accent color e.g. #22D3EE" id="admin-accent" value="#E8B84B" />
+              <input class="input" placeholder="Base color e.g. #0a1a2e" id="admin-basecolor" value="#16181b" />
+            </div>
+            <div class="dropzone" id="admin-dropzone" style="margin-bottom:0.75rem;">
+              <div class="dz-preview"><div class="placeholder">📎</div></div>
+              <div class="hint">Click to attach a logo (optional)</div>
+              <input type="file" accept="image/*" id="admin-logo-input" style="display:none;" />
+            </div>
+            <div id="admin-add-error" style="display:none;font-size:0.75rem;color:#f87171;margin-bottom:0.75rem;"></div>
+            <button type="submit" class="btn-gold" style="width:100%;" id="admin-add-btn">Add tag</button>
+          </form>
+        </div>
+
+        <div id="admin-panel-orders" style="display:none;">
+          <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(201,205,211,0.4);margin-bottom:0.75rem;">All orders</div>
+          <div id="admin-order-list" style="display:flex;flex-direction:column;gap:0.6rem;"></div>
+        </div>
       </div>
     </div>
   </div>

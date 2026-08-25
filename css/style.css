@@ -398,3 +398,33 @@ footer {
   border-color: rgba(201,205,211,0.25);
   background: rgba(201,205,211,0.06);
 }
+
+/* ---------- admin dashboard tabs (Tags / Orders) ---------- */
+.admin-tab {
+  background: none;
+  border: none;
+  padding: 0.5rem 0.25rem;
+  margin-right: 1.25rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(201,205,211,0.45);
+  border-bottom: 2px solid transparent;
+  position: relative;
+  bottom: -1px;
+}
+.admin-tab-active {
+  color: #E8B84B;
+  border-bottom-color: #E8B84B;
+}
+.admin-tab-badge {
+  display: inline-block;
+  min-width: 1rem;
+  padding: 0 0.3rem;
+  margin-left: 0.35rem;
+  border-radius: 9999px;
+  background: rgba(232,184,75,0.15);
+  color: #E8B84B;
+  font-size: 9px;
+}
