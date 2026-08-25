@@ -20,7 +20,7 @@ const ORDER_INBOX = "nexauraconsultant@gmail.com";
 // Until you do this, the form still works via a mailto: link (text
 // details reach your inbox), it just can't include the photo.
 // ============================================================
-const FORMSPREE_ENDPOINT = "PASTE_YOUR_FORMSPREE_ENDPOINT_HERE";
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/xdenrpzl";
 function isFormspreeConfigured() {
   return FORMSPREE_ENDPOINT.startsWith("https://formspree.io/");
 }
