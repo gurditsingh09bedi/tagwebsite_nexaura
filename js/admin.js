@@ -81,6 +81,13 @@ document.getElementById("admin-login-form")?.addEventListener("submit", async (e
 
 document.getElementById("admin-signout")?.addEventListener("click", () => signOutAdmin());
 
+document.getElementById("order-photo-lightbox-close")?.addEventListener("click", () => {
+  document.getElementById("order-photo-lightbox").classList.remove("open");
+});
+document.getElementById("order-photo-lightbox")?.addEventListener("click", (e) => {
+  if (e.target.id === "order-photo-lightbox") e.currentTarget.classList.remove("open");
+});
+
 // ---------- tab switching (Tags / Orders) inside the dashboard ----------
 const tabTags = document.getElementById("admin-tab-tags");
 const tabOrders = document.getElementById("admin-tab-orders");
@@ -142,30 +149,45 @@ function renderOrderList() {
     list.innerHTML = `<div style="font-size:0.75rem;color:rgba(201,205,211,0.4);">No orders yet.</div>`;
     return;
   }
-  list.innerHTML = currentOrders.map((o) => {
+  list.innerHTML = currentOrders.map((o, i) => {
     const when = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleString() : "";
+    const filenameSafe = (o.name || "order").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
     return `
-      <div style="background:rgba(255,255,255,0.04);border-radius:0.75rem;padding:0.9rem;">
-        <div style="display:flex;gap:0.75rem;">
+      <div class="order-card" style="background:rgba(255,255,255,0.04);border-radius:0.75rem;padding:1rem;">
+        <div style="display:flex;justify-content:space-between;gap:0.5rem;margin-bottom:0.6rem;">
+          <span style="font-size:0.95rem;font-weight:600;color:#fff;">${o.name || "(no name)"}</span>
+          <span style="font-size:0.7rem;color:rgba(201,205,211,0.4);white-space:nowrap;">${when}</span>
+        </div>
+
+        <div class="order-field"><span class="order-field-label">Email</span><span class="order-field-value">${o.email || "—"}</span></div>
+        <div class="order-field"><span class="order-field-label">Finish</span><span class="order-field-value">${o.finish || "—"}</span></div>
+        <div class="order-field"><span class="order-field-label">Tier</span><span class="order-field-value">${o.tier || "—"}</span></div>
+        <div class="order-field"><span class="order-field-label">Quantity</span><span class="order-field-value">${o.quantity || 1}</span></div>
+        <div class="order-field"><span class="order-field-label">Total</span><span class="order-field-value" style="color:#E8B84B;font-weight:600;">${o.total || "—"}</span></div>
+        ${o.message ? `<div class="order-field"><span class="order-field-label">Message</span><span class="order-field-value">"${o.message}"</span></div>` : ""}
+
+        <div style="margin-top:0.75rem;">
+          <span class="order-field-label" style="display:block;margin-bottom:0.4rem;">Logo / photo</span>
           ${o.logo
-            ? `<img src="${o.logo}" alt="" style="height:3.5rem;width:3.5rem;border-radius:0.5rem;object-fit:cover;flex-shrink:0;" />`
-            : `<div style="height:3.5rem;width:3.5rem;border-radius:0.5rem;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem;">👤</div>`
+            ? `
+              <div style="display:flex;align-items:center;gap:0.75rem;">
+                <img src="${o.logo}" alt="" class="order-photo-thumb" data-full="${o.logo}" style="cursor:zoom-in;" />
+                <a href="${o.logo}" download="${filenameSafe}-logo.png" class="order-download-link">⬇ Download</a>
+              </div>
+            `
+            : `<span style="font-size:0.75rem;color:rgba(201,205,211,0.35);">Not attached</span>`
           }
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;justify-content:space-between;gap:0.5rem;">
-              <span style="font-size:0.85rem;font-weight:600;color:#fff;">${o.name || "(no name)"}</span>
-              <span style="font-size:0.7rem;color:rgba(201,205,211,0.4);white-space:nowrap;">${when}</span>
-            </div>
-            <div style="font-size:0.75rem;color:rgba(201,205,211,0.6);">${o.email || ""}</div>
-            <div style="margin-top:0.35rem;font-size:0.75rem;color:rgba(232,184,75,0.9);">
-              ${o.finish || ""} · ${o.tier || ""} · qty ${o.quantity || 1} · ${o.total || ""}
-            </div>
-            ${o.message ? `<div style="margin-top:0.35rem;font-size:0.75rem;color:rgba(201,205,211,0.5);">"${o.message}"</div>` : ""}
-          </div>
         </div>
       </div>
     `;
   }).join("");
+
+  list.querySelectorAll(".order-photo-thumb").forEach((img) => {
+    img.addEventListener("click", () => {
+      document.getElementById("order-photo-lightbox-img").src = img.dataset.full;
+      document.getElementById("order-photo-lightbox").classList.add("open");
+    });
+  });
 }
 
 // ---------- add-tag logo upload ----------

@@ -428,3 +428,76 @@ footer {
   color: #E8B84B;
   font-size: 9px;
 }
+
+/* ---------- admin: order card details ---------- */
+.order-field {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  font-size: 0.78rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.order-field-label {
+  width: 5rem;
+  flex-shrink: 0;
+  color: rgba(201,205,211,0.4);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding-top: 2px;
+}
+.order-field-value {
+  color: rgba(232,236,241,0.9);
+  word-break: break-word;
+}
+.order-photo-thumb {
+  height: 4.5rem;
+  width: 4.5rem;
+  border-radius: 0.6rem;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: transform 0.15s;
+}
+.order-photo-thumb:hover { transform: scale(1.04); }
+.order-download-link {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #E8B84B;
+  border: 1px solid rgba(232,184,75,0.35);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  text-decoration: none;
+}
+.order-download-link:hover { background: rgba(232,184,75,0.1); }
+
+/* ---------- admin: full-size photo lightbox ---------- */
+#order-photo-lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.85);
+  padding: 2rem;
+}
+#order-photo-lightbox.open { display: flex; }
+#order-photo-lightbox img {
+  max-width: 90vw;
+  max-height: 85vh;
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+#order-photo-lightbox-close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #fff;
+  height: 2.25rem;
+  width: 2.25rem;
+  border-radius: 9999px;
+  font-size: 1rem;
+}
