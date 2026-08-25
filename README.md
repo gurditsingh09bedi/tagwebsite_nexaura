@@ -38,29 +38,27 @@ build, nothing else to touch.
 
 ## Receiving order requests (with photo/logo attachments)
 
-The Order form sends requests to **nexauraconsultant@gmail.com**.
+The Order form sends requests to **nexauraconsultant@gmail.com** via
+Formspree (already set up — endpoint is in `js/app.js`). Text details
+(name, email, finish, tier, total, message) reach the inbox reliably.
 
-By default it uses a `mailto:` link — opens the visitor's own email app with
-everything filled in, they hit send, you get it. Zero setup, always works,
-**but it can't carry an attached logo/photo** (a plain `mailto:` link can't
-include files).
+**Attached logos/photos currently do NOT come through** — Formspree's
+**free plan rejects any submission that includes a file** with the error
+`"File Uploads Not Permitted"`. The site already handles this gracefully:
+if someone attaches a photo, it's left out of what's sent (with a note in
+the email saying one was attached) rather than the whole submission
+failing. The Order form shows a small banner explaining this.
 
-**To actually receive attached logos/photos, set up Formspree (2 minutes, free):**
+**To actually receive attached photos, upgrade the Formspree plan**
+(their paid tiers support file uploads) — once upgraded, re-enable sending
+the file in `js/app.js`: find the `submit` handler's comment about
+`"File Uploads Not Permitted"` and swap the `note` line back to
+`data.append("logo", logoFile)`.
 
-1. Go to https://formspree.io and sign up with `nexauraconsultant@gmail.com`.
-2. Click **"New Form"**, copy the endpoint URL it gives you — looks like
-   `https://formspree.io/f/xxxxabcd`.
-3. Open `js/app.js`, find near the top:
-   ```js
-   const FORMSPREE_ENDPOINT = "PASTE_YOUR_FORMSPREE_ENDPOINT_HERE";
-   ```
-   replace the placeholder with your real endpoint.
-4. Re-upload just that one file, refresh the site.
-
-Once that's set, submissions (including any attached photo) go straight to
-your inbox via Formspree instead of the mailto fallback. The Order form
-shows a small reminder banner until this is set up, so it's obvious whether
-attachments are actually being received yet.
+If you'd rather not pay for Formspree just for this, the `mailto:`
+fallback (used automatically if `FORMSPREE_ENDPOINT` is ever unset) has
+the same limitation for a different reason — plain email links can't carry
+files at all either way.
 
 Formspree also keeps every submission in its own dashboard (formspree.io,
 "Submissions" tab) — so once it's set up, you get both: an email per order

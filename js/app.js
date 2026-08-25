@@ -280,6 +280,12 @@ function renderOrderPortal() {
   if (!isFormspreeConfigured()) {
     const note = document.getElementById("formspree-setup-note");
     if (note) note.style.display = "block";
+  } else {
+    // Formspree is set up, but its free plan still rejects any submission
+    // that includes a file — this note is the accurate, permanent state
+    // (not a "still needs setup" message) unless the plan gets upgraded.
+    const attachNote = document.getElementById("formspree-attachment-note");
+    if (attachNote) attachNote.style.display = "block";
   }
 
   const dropzone = document.getElementById("order-dropzone");
@@ -329,7 +335,14 @@ function renderOrderPortal() {
         data.append("quantity", qty);
         data.append("total", fmtUsd(total));
         if (message) data.append("message", message);
-        if (logoFile) data.append("logo", logoFile);
+        // NOTE: the free Formspree plan rejects the whole submission if a
+        // file is attached ("File Uploads Not Permitted"), so the logo/photo
+        // is never sent here — just a note that one was attached. To
+        // actually receive attachments, upgrade the Formspree plan (see
+        // README) and this can go back to attaching logoFile directly.
+        if (logoFile) {
+          data.append("note", `They attached a logo/photo (${logoFile.name}) in the form — Formspree's free plan doesn't accept file attachments, so it wasn't included here. Reply to ask them to send it directly, or upgrade Formspree to receive attachments automatically.`);
+        }
 
         const res = await fetch(FORMSPREE_ENDPOINT, {
           method: "POST",
@@ -338,7 +351,7 @@ function renderOrderPortal() {
         });
 
         if (res.ok) {
-          showOrderSuccess(form, success, colorway, tier, total, true);
+          showOrderSuccess(form, success, colorway, tier, total, true, !!logoFile);
         } else {
           submitBtn.disabled = false;
           updateOrderTotal();
@@ -374,15 +387,30 @@ function renderOrderPortal() {
   document.getElementById("order-qty").addEventListener("input", updateOrderTotal);
 }
 
-function showOrderSuccess(form, success, colorway, tier, total, sentDirectly) {
+function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, hadLogoNotSent) {
   form.style.display = "none";
+
+  const emailLogoButton = hadLogoNotSent
+    ? `
+      <a href="mailto:${ORDER_INBOX}?subject=${encodeURIComponent("My logo/photo for the Nexaura Tag order")}&body=${encodeURIComponent("Hi Nexaura,\n\nAttaching the logo/photo for my order — please find it attached.\n")}"
+         class="btn-gold" style="display:inline-block;margin-top:1.25rem;text-decoration:none;">
+        📎 Email your logo/photo now
+      </a>
+      <p style="margin-top:0.6rem;font-size:0.7rem;color:rgba(201,205,211,0.4);">
+        Opens your email app, addressed and ready — just attach the file yourself and hit send.
+      </p>
+    `
+    : "";
+
   success.innerHTML = sentDirectly
     ? `
       <div style="font-size:1.75rem;margin-bottom:0.75rem;">✦</div>
       <p style="font-size:1.125rem;color:#fff;">You're on the list.</p>
       <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">
-        ${colorway.name} · ${tier.name} · ${fmtUsd(total)} total — sent straight to Nexaura, logo/photo included.
+        ${colorway.name} · ${tier.name} · ${fmtUsd(total)} total — sent straight to Nexaura.
+        ${hadLogoNotSent ? " Your attached photo couldn't be included automatically — send it directly below." : ""}
       </p>
+      ${emailLogoButton}
     `
     : `
       <div style="font-size:1.75rem;margin-bottom:0.75rem;">✦</div>
