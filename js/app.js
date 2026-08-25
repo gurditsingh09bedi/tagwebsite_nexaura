@@ -1,5 +1,9 @@
 import { createTagScene } from "./scene.js";
 
+// Every order request opens the visitor's email app addressed here —
+// change this if the inbox should ever be different.
+const ORDER_INBOX = "nexauraconsultant@gmail.com";
+
 const TAGS_LOCAL = window.TAGS;
 const COLORWAYS_LOCAL = window.COLORWAYS;
 const TIERS_LOCAL = window.TIERS;
@@ -18,7 +22,7 @@ function runIntro() {
   const overlay = document.getElementById("intro-overlay");
   const heroCopy = document.getElementById("hero-copy");
 
-  textEl.innerHTML = `<div class="mono-label" style="font-size:12px;color:rgba(201,205,211,0.5);letter-spacing:0.5em;">A NEXAURA PRODUCTION</div>`;
+  textEl.innerHTML = `<div class="mono-label" style="font-size:12px;color:rgba(201,205,211,0.62);letter-spacing:0.5em;">A NEXAURA PRODUCTION</div>`;
 
   setTimeout(() => {
     top.style.height = "9vh";
@@ -71,8 +75,8 @@ function renderLineup() {
       </div>
       <span class="mono-label" style="font-size:10px;color:rgba(252,211,77,0.5);">0${i + 1}</span>
       <h3 class="font-display" style="font-size:1.25rem;font-weight:600;color:#fff;margin-top:0.25rem;">${tag.name}</h3>
-      <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.5);">${tag.tagline}</p>
-      <p style="margin-top:0.75rem;font-size:0.75rem;line-height:1.6;color:rgba(201,205,211,0.4);">${tag.description}</p>
+      <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">${tag.tagline}</p>
+      <p style="margin-top:0.75rem;font-size:0.75rem;line-height:1.6;color:rgba(201,205,211,0.55);">${tag.description}</p>
       <div style="margin-top:1.25rem;font-size:0.75rem;font-weight:500;color:#E8B84B;">
         ${tag.url && tag.url !== "#" ? "View Tag →" : "View in 3D →"}
       </div>
@@ -118,8 +122,8 @@ function renderColorways() {
         <span class="price-badge">${fmtUsd(c.price)}</span>
       </div>
       <h3 class="font-display" style="font-size:1.25rem;font-weight:600;color:#fff;">${c.name}</h3>
-      <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.5);">${c.tagline}</p>
-      <p style="margin-top:0.75rem;font-size:0.75rem;line-height:1.6;color:rgba(201,205,211,0.4);">${c.description}</p>
+      <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">${c.tagline}</p>
+      <p style="margin-top:0.75rem;font-size:0.75rem;line-height:1.6;color:rgba(201,205,211,0.55);">${c.description}</p>
       <div class="colorway-cta mono-label" style="margin-top:1.25rem;font-size:0.7rem;font-weight:500;color:#E8B84B;">Choose this finish →</div>
     </button>
   `).join("");
@@ -157,7 +161,7 @@ function renderPricing() {
     <button type="button" class="glass tier-card reveal" data-tier-id="${t.id}" style="text-align:left;width:100%;">
       <div class="mono-label" style="font-size:10px;color:rgba(252,211,77,0.5);margin-bottom:0.5rem;">${t.name}</div>
       <div class="tier-price">${fmtUsd(t.price)}<span class="unit">/ tag</span></div>
-      <p style="font-size:0.75rem;color:rgba(201,205,211,0.5);margin-bottom:1.25rem;">${t.tagline}</p>
+      <p style="font-size:0.75rem;color:rgba(201,205,211,0.62);margin-bottom:1.25rem;">${t.tagline}</p>
       <ul class="tier-features">${t.features.map((f) => `<li>${f}</li>`).join("")}</ul>
       <div class="tier-cta plain">Choose ${t.name}</div>
     </button>
@@ -259,21 +263,43 @@ function renderOrderPortal() {
     e.preventDefault();
     const form = document.getElementById("order-form");
     const success = document.getElementById("order-success");
-    form.style.display = "none";
     const colorway = COLORWAYS_LOCAL.find((c) => c.id === selectedColorwayId);
     const tier = TIERS_LOCAL.find((t) => t.id === selectedTierId);
     const qty = Math.max(1, Number(document.getElementById("order-qty").value) || 1);
     const total = (colorway.price + tier.price) * qty;
+    const name = document.getElementById("order-name").value;
+    const email = document.getElementById("order-email").value;
+    const message = document.getElementById("order-message").value;
+    const hasLogo = fileInput.files.length > 0;
+
+    // Sends the request straight to your inbox via a mailto: link — no
+    // backend or third-party form service needed. Opens the visitor's own
+    // email app with everything pre-filled; they just hit send.
+    const subject = `Nexaura Tag order — ${name || "New request"}`;
+    const bodyLines = [
+      `Name: ${name}`,
+      `Email: ${email}`,
+      `Finish: ${colorway.name} (${fmtUsd(colorway.price)})`,
+      `Tier: ${tier.name} (${fmtUsd(tier.price)})`,
+      `Quantity: ${qty}`,
+      `Total: ${fmtUsd(total)}`,
+      message ? `Message: ${message}` : "",
+      hasLogo ? "\n(They attached a logo/photo in the form — ask them to reply with it, mailto links can't carry attachments.)" : "",
+    ].filter(Boolean);
+    const mailtoLink = `mailto:${ORDER_INBOX}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
+
+    window.location.href = mailtoLink;
+
+    form.style.display = "none";
     success.innerHTML = `
       <div style="font-size:1.75rem;margin-bottom:0.75rem;">✦</div>
-      <p style="font-size:1.125rem;color:#fff;">You're on the list.</p>
-      <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.5);">
-        ${colorway.name} · ${tier.name} · ${fmtUsd(total)} total — we'll reach out from Nexaura shortly.
+      <p style="font-size:1.125rem;color:#fff;">Almost there.</p>
+      <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">
+        Your email app should have opened with the request filled in — hit send there to reach Nexaura.
+        ${colorway.name} · ${tier.name} · ${fmtUsd(total)} total.
       </p>
     `;
     success.style.display = "block";
-    // NOTE: this form doesn't send anywhere yet — wire it up to Formspree or
-    // your own backend inside this submit handler in js/app.js.
   });
 
   document.getElementById("order-qty").addEventListener("input", updateOrderTotal);
