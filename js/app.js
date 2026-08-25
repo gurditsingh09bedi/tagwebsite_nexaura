@@ -123,11 +123,24 @@ function setActiveTag(id) {
 
 // ---------- colorways ----------
 function colorwayArt(c) {
+  const isMetal = c.material === "metal";
+  const [from, to] = c.gradient;
+
+  const cardBg = isMetal
+    ? `repeating-linear-gradient(115deg, rgba(255,255,255,0.16) 0px, rgba(255,255,255,0.16) 2px, transparent 2px, transparent 7px), linear-gradient(160deg, ${c.sheen}, ${from} 45%, ${to} 100%)`
+    : `linear-gradient(165deg, ${from}, ${to})`;
+
   return `
-    <div class="thumb" style="background:linear-gradient(135deg, ${c.gradient[0]}, ${c.gradient[1]});">
-      <div class="sheen" style="background:radial-gradient(circle at 30% 20%, ${c.sheen}, transparent 55%);"></div>
-      <div class="swatch" style="background:linear-gradient(160deg, ${c.sheen}, ${c.gradient[1]}); box-shadow:0 0 28px ${c.accent}66;">
-        <div style="position:absolute;inset-block:0.5rem;left:0.35rem;width:0.25rem;border-radius:9999px;opacity:0.8;background:${c.accent};"></div>
+    <div class="thumb thumb-card" style="background:linear-gradient(135deg, ${from}22, ${to});">
+      <div class="card-plate-wrap">
+        <div class="card-plate ${isMetal ? "" : "card-plate-matte"}" style="background:${cardBg};">
+          <div class="card-plate-shine ${isMetal ? "" : "card-plate-shine-soft"}"></div>
+          ${isMetal ? '<div class="card-plate-shine-2"></div>' : ""}
+          <div class="card-plate-rim"></div>
+          <div class="card-plate-seam" style="background:${c.accent};color:${c.accent};"></div>
+          <span class="card-material-tag">${isMetal ? "METAL" : "PLASTIC"}</span>
+        </div>
+        <div class="card-reflection" style="background:${cardBg};"></div>
       </div>
     </div>
   `;
@@ -142,7 +155,10 @@ function renderColorways() {
         <span class="mono-label" style="font-size:10px;color:rgba(252,211,77,0.5);">0${i + 1}</span>
         <span class="price-badge">${fmtUsd(c.price)}</span>
       </div>
-      <h3 class="font-display" style="font-size:1.25rem;font-weight:600;color:#fff;">${c.name}</h3>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <h3 class="font-display" style="font-size:1.25rem;font-weight:600;color:#fff;">${c.name}</h3>
+        <span class="material-badge material-badge-${c.material}">${c.material === "metal" ? "Metal" : "Plastic"}</span>
+      </div>
       <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">${c.tagline}</p>
       <p style="margin-top:0.75rem;font-size:0.75rem;line-height:1.6;color:rgba(201,205,211,0.55);">${c.description}</p>
       <div class="colorway-cta mono-label" style="margin-top:1.25rem;font-size:0.7rem;font-weight:500;color:#E8B84B;">Choose this finish →</div>

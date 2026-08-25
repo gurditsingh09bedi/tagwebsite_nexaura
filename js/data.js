@@ -43,12 +43,12 @@ const TAGS = [
 ];
 
 const COLORWAYS = [
-  { id: "onyx", name: "Onyx", tagline: "The original.", description: "Brushed matte black finish with a single cyan seam. Tap-to-share your world in under a second.", price: 11.99, accent: "#22D3EE", gradient: ["#1c1e22", "#0a0a0c"], sheen: "#3a3d42" },
-  { id: "graphite", name: "Graphite", tagline: "Understated power.", description: "Deep charcoal composite with a hairline cyan edge-light. Quiet until it isn't.", price: 15.99, accent: "#38BDF8", gradient: ["#3a3d42", "#121316"], sheen: "#565a61" },
-  { id: "platinum", name: "Platinum", tagline: "Polished for presence.", description: "Mirror-polished silver body. Built for founders, creators, and anyone who walks into a room first.", price: 19.99, accent: "#E8ECF1", gradient: ["#d7dbe0", "#7d828a"], sheen: "#ffffff" },
-  { id: "cobalt", name: "Cobalt", tagline: "Deep blue, bold move.", description: "Rich cobalt-blue anodized finish with a bright white seam. For the ones who don't blend in.", price: 23.99, accent: "#ffffff", gradient: ["#1e3a8a", "#0b1230"], sheen: "#5b7cf0" },
-  { id: "chrome", name: "Chrome", tagline: "Full reflection.", description: "A near-chrome shell that mirrors everything around it. The most photographed tag in the lineup.", price: 29.99, accent: "#E8ECF1", gradient: ["#f2f4f6", "#8a9099"], sheen: "#ffffff" },
-  { id: "rose-gold", name: "Rose Gold", tagline: "Warm metal, sharp edges.", description: "Brushed rose-gold composite with a soft amber glow. Understated luxury, made to be noticed.", price: 35.99, accent: "#F5A987", gradient: ["#c07a5e", "#3a1c14"], sheen: "#f0b79b" },
+  { id: "onyx", name: "Onyx", tagline: "The original.", description: "Lightweight matte black plastic with a single cyan seam — the affordable starting point. Tap-to-share your world in under a second.", price: 11.99, accent: "#22D3EE", gradient: ["#1c1e22", "#0a0a0c"], sheen: "#3a3d42", material: "plastic" },
+  { id: "graphite", name: "Graphite", tagline: "Understated power.", description: "Lightweight charcoal plastic, same durable build as Onyx, with a hairline cyan edge-light and a more understated tone.", price: 15.99, accent: "#38BDF8", gradient: ["#3a3d42", "#121316"], sheen: "#565a61", material: "plastic" },
+  { id: "platinum", name: "Platinum", tagline: "Polished for presence.", description: "Light silver-grey plastic — the brightest of the three plastic finishes, for founders and creators who want to stand out without going full metal.", price: 19.99, accent: "#E8ECF1", gradient: ["#d7dbe0", "#7d828a"], sheen: "#ffffff", material: "plastic" },
+  { id: "cobalt", name: "Cobalt", tagline: "Deep blue, bold move.", description: "Solid anodized metal — heavier and more durable than the plastic finishes, in a rich cobalt-blue coat with a bright white seam.", price: 23.99, accent: "#ffffff", gradient: ["#1e3a8a", "#0b1230"], sheen: "#5b7cf0", material: "metal" },
+  { id: "chrome", name: "Chrome", tagline: "Full reflection.", description: "Solid mirror-polished metal, same durable build as Cobalt — the most reflective, most photographed finish in the lineup.", price: 29.99, accent: "#E8ECF1", gradient: ["#f2f4f6", "#8a9099"], sheen: "#ffffff", material: "metal" },
+  { id: "rose-gold", name: "Rose Gold", tagline: "Warm metal, sharp edges.", description: "Solid brushed metal in a warm rose-gold finish — the premium top-tier option, full metal build with the most refined look.", price: 35.99, accent: "#F5A987", gradient: ["#c07a5e", "#3a1c14"], sheen: "#f0b79b", material: "metal" },
 ];
 
 const TIERS = [
