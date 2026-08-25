@@ -2,6 +2,7 @@ import { createTagScene } from "./scene.js";
 import { subscribeTags } from "./tags-store.js";
 import { submitOrder, ordersBackendAvailable, getOrderById, ORDER_STAGES, stageIndex } from "./orders-store.js";
 import { compressImageToDataUrl } from "./img-utils.js";
+import { sendOrderStatusEmail, isEmailJsConfigured } from "./email-notify.js";
 
 // Every order request opens the visitor's email app addressed here —
 // change this if the inbox should ever be different.
@@ -321,16 +322,19 @@ function renderOrderPortal() {
     // submit flow, it just means no order ID / tracking / photo storage.
     let orderSavedWithPhoto = false;
     let orderId = null;
+    const finishLabel = `${colorway.name} (${fmtUsd(colorway.price)})`;
+    const tierLabel = `${tier.name} (${fmtUsd(tier.price)})`;
+    const totalLabel = fmtUsd(total);
     if (ordersBackendAvailable()) {
       try {
         const logoDataUrl = logoFile ? await compressImageToDataUrl(logoFile) : null;
         orderId = await submitOrder({
           name,
           email,
-          finish: `${colorway.name} (${fmtUsd(colorway.price)})`,
-          tier: `${tier.name} (${fmtUsd(tier.price)})`,
+          finish: finishLabel,
+          tier: tierLabel,
           quantity: qty,
-          total: fmtUsd(total),
+          total: totalLabel,
           message: message || null,
           logo: logoDataUrl,
         });
@@ -341,6 +345,28 @@ function renderOrderPortal() {
       }
     }
     const needsManualLogoEmail = !!logoFile && !orderSavedWithPhoto;
+
+    // Send the customer their own confirmation email right away — full
+    // receipt, order ID, and a link to check status later. Independent of
+    // the Formspree step below (that one notifies the business owner, not
+    // the customer). Best-effort: never blocks the rest of the submit flow.
+    if (orderId && email && isEmailJsConfigured()) {
+      const trackingLink = `${window.location.origin}${window.location.pathname}#track-order`;
+      sendOrderStatusEmail({
+        toEmail: email,
+        customerName: name,
+        orderId,
+        statusLabel: ORDER_STAGES[0].label,
+        statusNote: ORDER_STAGES[0].customerNote,
+        finish: finishLabel,
+        tier: tierLabel,
+        quantity: qty,
+        total: totalLabel,
+        trackingLink,
+      }).then((result) => {
+        if (!result.sent) console.warn("Order confirmation email to customer didn't go out:", result.reason);
+      });
+    }
 
     if (isFormspreeConfigured()) {
       // Sends the whole thing — including the attached logo/photo — to
@@ -413,7 +439,7 @@ function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, ha
       <div style="margin:1rem auto 0;max-width:16rem;border-radius:0.75rem;border:1px solid rgba(232,184,75,0.35);background:rgba(232,184,75,0.08);padding:0.9rem;">
         <div class="mono-label" style="font-size:9px;color:rgba(201,205,211,0.5);margin-bottom:0.3rem;">Your order ID — save this</div>
         <div class="font-display" style="font-size:1.4rem;font-weight:700;color:#E8B84B;letter-spacing:0.05em;">${orderId}</div>
-        <div style="margin-top:0.5rem;font-size:0.7rem;color:rgba(201,205,211,0.5);">Use it below to check your order status anytime.</div>
+        <div style="margin-top:0.5rem;font-size:0.7rem;color:rgba(201,205,211,0.5);">Use it below to check your order status anytime.${isEmailJsConfigured() ? " A confirmation email is on its way to you too." : ""}</div>
       </div>
     `
     : "";

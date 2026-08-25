@@ -1,6 +1,6 @@
 import { subscribeTags, addTagRemote, deleteTagRemote, signInAdmin, signOutAdmin, onAuthChange } from "./tags-store.js";
 import { subscribeOrders, updateOrderStatus, ORDER_STAGES, stageIndex } from "./orders-store.js";
-import { notifyCustomerStatusUpdate, isEmailJsConfigured } from "./email-notify.js";
+import { sendOrderStatusEmail, isEmailJsConfigured } from "./email-notify.js";
 import { isFirebaseConfigured } from "./firebase-config.js";
 import { compressImageToDataUrl } from "./img-utils.js";
 
@@ -220,12 +220,18 @@ function renderOrderList() {
         return;
       }
       if (order?.email && isEmailJsConfigured()) {
-        const result = await notifyCustomerStatusUpdate({
+        const trackingLink = `${window.location.origin}${window.location.pathname}#track-order`;
+        const result = await sendOrderStatusEmail({
           toEmail: order.email,
           customerName: order.name,
           orderId,
           statusLabel: stage?.label,
           statusNote: stage?.customerNote,
+          finish: order.finish,
+          tier: order.tier,
+          quantity: order.quantity,
+          total: order.total,
+          trackingLink,
         });
         if (!result.sent) console.warn("Auto-email to customer didn't go out:", result.reason);
       }
