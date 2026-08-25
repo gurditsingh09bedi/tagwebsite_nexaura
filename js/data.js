@@ -42,35 +42,6 @@ const TAGS = [
   },
 ];
 
-const CLIENTS = [
-  {
-    id: "japp-financial",
-    name: "JAPP Financial",
-    category: "Financial Services",
-    description: "Future-Driven Financial Intelligence — a digital business card with instant call, email, website and WhatsApp contact.",
-    url: "https://jappfinancial.github.io/Jass_tag/",
-    logo: "logos/japp-financial.png",
-    accent: "#0a1a2e",
-  },
-  {
-    id: "nexaura-consultant",
-    name: "Nexaura Consultant Ltd",
-    category: "AI Consultancy",
-    description: "Our own digital business card — AI consultancy, automation, custom software and cloud solutions, with a live neural-network background.",
-    url: "https://nexauraconsultant.github.io/tag_nexaura/",
-    logo: "logos/nexaura-consultant.jpg",
-    accent: "#120a24",
-  },
-  {
-    id: "esh-driving-school",
-    name: "ESH Driving School",
-    category: "Driving School",
-    description: "Real driving-lesson video background, DVSA-style branding, and one-tap call, WhatsApp, directions and Facebook follow.",
-    url: "#",
-    photo: "client-thumbs/esh-thumb.jpg",
-  },
-];
-
 const COLORWAYS = [
   { id: "onyx", name: "Onyx", tagline: "The original.", description: "Brushed matte black finish with a single cyan seam. Tap-to-share your world in under a second.", price: 11.99, accent: "#22D3EE", gradient: ["#1c1e22", "#0a0a0c"], sheen: "#3a3d42" },
   { id: "graphite", name: "Graphite", tagline: "Understated power.", description: "Deep charcoal composite with a hairline cyan edge-light. Quiet until it isn't.", price: 15.99, accent: "#38BDF8", gradient: ["#3a3d42", "#121316"], sheen: "#565a61" },
@@ -102,7 +73,6 @@ const fmtUsd = (n) => `$${n.toFixed(2)}`;
 
 // exposed as globals so app.js (a module) can read them without a bundler
 window.TAGS = TAGS;
-window.CLIENTS = CLIENTS;
 window.COLORWAYS = COLORWAYS;
 window.TIERS = TIERS;
 window.LIVE_EVENTS = LIVE_EVENTS;

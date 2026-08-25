@@ -11,7 +11,7 @@ loads straight from a CDN.
    `.github/`, `src/`, `public/`, everything). This avoids any leftover
    file from the old React version conflicting with this one.
 2. Upload every file in this folder to your repo root (`index.html`,
-   `css/`, `js/`, `logos/`, `client-thumbs/`, `favicon.svg`).
+   `css/`, `js/`, `logos/`, `favicon.svg`).
 3. Repo → **Settings → Pages → Build and deployment → Source** → set to
    **"Deploy from a branch"**, branch `main`, folder `/ (root)`. (Not
    "GitHub Actions" this time — there's nothing to build, so plain branch
@@ -32,7 +32,6 @@ Everything editable lives in **`js/data.js`** — one file, plain arrays:
   first).
 - `COLORWAYS` — the 6 finishes and their prices.
 - `TIERS` — the 4 service tiers and their prices.
-- `CLIENTS` — the "Our Clients" showcase cards.
 
 Edit the array, save, re-upload just `js/data.js`, refresh the page. No
 build, nothing else to touch.

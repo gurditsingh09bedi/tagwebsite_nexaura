@@ -3,6 +3,10 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 
 // Draws a tag's monogram/name/tagline onto an offscreen canvas — same
 // approach as before, just called directly instead of through a React hook.
+// When a tag has a real logo, the ring+monogram badge is skipped entirely
+// (the logo itself, added separately as a big 3D plane, takes that space)
+// and the name/tagline move down to a small strip near the bottom instead
+// of the middle, so the logo can dominate the card.
 function makeLabelTexture(tag) {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
@@ -11,31 +15,43 @@ function makeLabelTexture(tag) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const cx = canvas.width / 2;
-  const badgeY = 190;
-  const initial = (tag.name || "?").trim().charAt(0).toUpperCase();
-
-  ctx.beginPath();
-  ctx.arc(cx, badgeY, 92, 0, Math.PI * 2);
-  ctx.strokeStyle = tag.accent || "#E8B84B";
-  ctx.lineWidth = 8;
-  ctx.stroke();
 
   if (!tag.logo) {
+    const badgeY = 190;
+    const initial = (tag.name || "?").trim().charAt(0).toUpperCase();
+    ctx.beginPath();
+    ctx.arc(cx, badgeY, 92, 0, Math.PI * 2);
+    ctx.strokeStyle = tag.accent || "#E8B84B";
+    ctx.lineWidth = 8;
+    ctx.stroke();
+
     ctx.fillStyle = "#f4f0e6";
     ctx.font = "700 130px 'Space Grotesk', Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(initial, cx, badgeY + 8);
-  }
 
-  ctx.font = "700 58px 'Space Grotesk', Arial, sans-serif";
-  ctx.fillStyle = "#f4f0e6";
-  wrapText(ctx, tag.name || "", cx, 400, 420, 66);
+    ctx.font = "700 58px 'Space Grotesk', Arial, sans-serif";
+    ctx.fillStyle = "#f4f0e6";
+    wrapText(ctx, tag.name || "", cx, 400, 420, 66);
 
-  if (tag.tagline) {
-    ctx.font = "400 30px Arial, sans-serif";
-    ctx.fillStyle = tag.accent || "#E8B84B";
-    wrapText(ctx, tag.tagline, cx, 560, 420, 40);
+    if (tag.tagline) {
+      ctx.font = "400 30px Arial, sans-serif";
+      ctx.fillStyle = tag.accent || "#E8B84B";
+      wrapText(ctx, tag.tagline, cx, 560, 420, 40);
+    }
+  } else {
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "700 46px 'Space Grotesk', Arial, sans-serif";
+    ctx.fillStyle = "#f4f0e6";
+    wrapText(ctx, tag.name || "", cx, 700, 440, 54);
+
+    if (tag.tagline) {
+      ctx.font = "400 26px Arial, sans-serif";
+      ctx.fillStyle = tag.accent || "#E8B84B";
+      wrapText(ctx, tag.tagline, cx, 760, 440, 34);
+    }
   }
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -106,11 +122,18 @@ class Tag3D {
         tag.logo,
         (tex) => {
           tex.colorSpace = THREE.SRGBColorSpace;
+          // size the logo to fill most of the card, preserving its real
+          // aspect ratio (so a wide logo doesn't get squished) instead of
+          // a small fixed-size circle — this is the card's main visual now
+          const maxW = 1.2, maxH = 1.3;
+          const imgAspect = (tex.image.width || 1) / (tex.image.height || 1);
+          let w = maxW, h = maxW / imgAspect;
+          if (h > maxH) { h = maxH; w = maxH * imgAspect; }
           const logoPlane = new THREE.Mesh(
-            new THREE.CircleGeometry(0.205, 40),
+            new THREE.PlaneGeometry(w, h),
             new THREE.MeshBasicMaterial({ map: tex, transparent: true, toneMapped: false })
           );
-          logoPlane.position.set(0, 0.58, 0.048);
+          logoPlane.position.set(0, 0.35, 0.05);
           this.group.add(logoPlane);
         },
         undefined,
