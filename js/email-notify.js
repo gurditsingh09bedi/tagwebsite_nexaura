@@ -38,9 +38,9 @@
 // save fine in the Orders panel, the customer just won't get emailed.
 // ============================================================
 
-const EMAILJS_PUBLIC_KEY = "PASTE_YOUR_EMAILJS_PUBLIC_KEY";
-const EMAILJS_SERVICE_ID = "PASTE_YOUR_EMAILJS_SERVICE_ID";
-const EMAILJS_TEMPLATE_ID = "PASTE_YOUR_EMAILJS_TEMPLATE_ID";
+const EMAILJS_PUBLIC_KEY = "eyoor9UxmQPImigef";
+const EMAILJS_SERVICE_ID = "service_33cpol2";
+const EMAILJS_TEMPLATE_ID = "template_xrtqeva";
 
 export function isEmailJsConfigured() {
   return (
