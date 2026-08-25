@@ -29,12 +29,13 @@ subscribeTags((tags, isLive) => {
 });
 
 // ---------- orders ----------
+// Unlike tags (publicly readable), orders require being signed in first —
+// Firestore's security rules reject the read otherwise. So this only
+// starts listening once onAuthChange below confirms someone's actually
+// signed in, instead of trying immediately on page load (which would race
+// against auth finishing and silently fail with "no orders" forever).
 let currentOrders = [];
-subscribeOrders((orders) => {
-  currentOrders = orders;
-  renderOrderList();
-  updateOrdersBadge();
-});
+let unsubscribeOrders = null;
 
 if (!isFirebaseConfigured()) {
   showPanel(noBackendEl);
@@ -45,9 +46,21 @@ if (!isFirebaseConfigured()) {
       const who = document.getElementById("admin-signed-in-as");
       if (who) who.textContent = user.email;
       renderTagList();
-      renderOrderList();
+
+      if (!unsubscribeOrders) {
+        unsubscribeOrders = subscribeOrders((orders) => {
+          currentOrders = orders;
+          renderOrderList();
+          updateOrdersBadge();
+        });
+      }
     } else {
       showPanel(loginEl);
+      if (unsubscribeOrders) {
+        unsubscribeOrders();
+        unsubscribeOrders = null;
+        currentOrders = [];
+      }
     }
   });
 }
