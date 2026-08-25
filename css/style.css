@@ -2,7 +2,7 @@
 html, body { height: 100%; }
 body {
   margin: 0;
-  background: #07060c;
+  background: #0a0814;
   color: #E8ECF1;
   font-family: 'Space Grotesk', sans-serif;
   overflow-x: hidden;
@@ -54,16 +54,16 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---------- backgrounds ---------- */
 
-.aurora-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: #07060c; }
+.aurora-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: #0a0814; }
 .aurora-bg::before, .aurora-bg::after {
-  content: ""; position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%;
-  filter: blur(90px); opacity: 0.22; will-change: transform;
+  content: ""; position: absolute; width: 75vmax; height: 75vmax; border-radius: 50%;
+  filter: blur(90px); opacity: 0.38; will-change: transform;
 }
 .aurora-bg::before { top: -20vmax; left: -15vmax; background: radial-gradient(circle at 30% 30%, #8B5CF6, transparent 65%); animation: auroraDrift1 34s ease-in-out infinite; }
 .aurora-bg::after { bottom: -25vmax; right: -18vmax; background: radial-gradient(circle at 60% 60%, #22D3EE, transparent 65%); animation: auroraDrift2 40s ease-in-out infinite; }
 .aurora-blob-gold {
-  position: absolute; top: 35%; left: 50%; width: 55vmax; height: 55vmax; border-radius: 50%;
-  background: radial-gradient(circle, #E8B84B, transparent 65%); filter: blur(100px); opacity: 0.14;
+  position: absolute; top: 35%; left: 50%; width: 58vmax; height: 58vmax; border-radius: 50%;
+  background: radial-gradient(circle, #E8B84B, transparent 65%); filter: blur(100px); opacity: 0.26;
   transform: translate(-50%, -50%); animation: auroraDrift3 46s ease-in-out infinite;
 }
 @keyframes auroraDrift1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(8vmax,10vmax) scale(1.15); } }

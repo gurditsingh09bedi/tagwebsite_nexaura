@@ -214,13 +214,15 @@ function renderClients() {
   const grid = document.getElementById("clients-grid");
   grid.innerHTML = CLIENTS_LOCAL.map((c, i) => `
     <a href="${c.url}" target="_blank" rel="noreferrer" class="glass client-card reveal" style="animation-delay:${i * 0.1}s">
-      <div class="client-photo">
-        ${c.photo ? `<img src="${c.photo}" alt="${c.name}" />` : ""}
+      <div class="client-photo" ${c.logo ? `style="background:linear-gradient(135deg, ${c.accent || "#16181b"}, #0a0a0c);display:flex;align-items:center;justify-content:center;"` : ""}>
+        ${c.logo
+          ? `<img src="${c.logo}" alt="${c.name} logo" style="height:70%;width:70%;object-fit:contain;" />`
+          : c.photo ? `<img src="${c.photo}" alt="${c.name}" />` : ""
+        }
       </div>
       <div class="client-body">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+        <div style="margin-bottom:0.5rem;">
           <span class="mono-label" style="font-size:10px;color:rgba(252,211,77,0.5);">${c.category}</span>
-          ${c.price ? `<span class="price-badge">${c.price}</span>` : ""}
         </div>
         <h3 class="font-display" style="font-size:1.125rem;font-weight:600;color:#fff;">${c.name}</h3>
         <p style="margin-top:0.5rem;font-size:0.75rem;line-height:1.6;color:rgba(201,205,211,0.45);">${c.description}</p>
