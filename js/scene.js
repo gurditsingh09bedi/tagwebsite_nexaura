@@ -212,7 +212,7 @@ export function createTagScene(container, tags) {
     pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
   }
 
-  container.addEventListener("pointermove", (e) => {
+  function onContainerPointerMove(e) {
     updatePointer(e.clientX, e.clientY);
     raycaster.setFromCamera(pointer, camera);
     const meshes = instances.map((t) => t.mesh);
@@ -224,28 +224,34 @@ export function createTagScene(container, tags) {
       if (hoveredInstance) hoveredInstance.hovered = true;
       container.style.cursor = hoveredInstance ? "pointer" : "auto";
     }
-  });
+  }
+  container.addEventListener("pointermove", onContainerPointerMove);
 
-  container.addEventListener("click", () => {
+  function onContainerClick() {
     if (hoveredInstance) {
       const tag = hoveredInstance.tag;
       window.dispatchEvent(new CustomEvent("tag-selected", { detail: tag }));
       if (tag.url && tag.url !== "#") window.open(tag.url, "_blank", "noopener");
     }
-  });
+  }
+  container.addEventListener("click", onContainerClick);
 
   const clock = new THREE.Clock();
   const drift = new THREE.Vector2();
   const mouseNdc = new THREE.Vector2();
-  window.addEventListener("pointermove", (e) => {
+  function onWindowPointerMove(e) {
     mouseNdc.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouseNdc.y = -(e.clientY / window.innerHeight) * 2 + 1;
-  });
+  }
+  window.addEventListener("pointermove", onWindowPointerMove);
 
   let settled = false;
+  let rafId = null;
+  let disposed = false;
 
   function animate() {
-    requestAnimationFrame(animate);
+    if (disposed) return;
+    rafId = requestAnimationFrame(animate);
     const elapsed = clock.getElapsedTime();
     const delta = clock.getDelta();
 
@@ -268,15 +274,29 @@ export function createTagScene(container, tags) {
   }
   animate();
 
-  window.addEventListener("resize", () => {
+  function onResize() {
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(container.clientWidth, container.clientHeight);
-  });
+  }
+  window.addEventListener("resize", onResize);
 
   return {
     setActive(id) {
       instances.forEach((t) => { t.isActive = t.tag.id === id; });
+    },
+    // Called before replacing this scene with a fresh one (e.g. tags
+    // changed) — stops the render loop and event listeners so they don't
+    // keep running in the background or duplicate on the next scene.
+    destroy() {
+      disposed = true;
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener("pointermove", onWindowPointerMove);
+      window.removeEventListener("resize", onResize);
+      container.removeEventListener("pointermove", onContainerPointerMove);
+      container.removeEventListener("click", onContainerClick);
+      renderer.dispose();
+      if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
     },
   };
 }

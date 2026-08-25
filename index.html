@@ -129,6 +129,10 @@
       </div>
 
       <div class="glass-strong reveal" style="padding:2rem;">
+        <div id="formspree-setup-note" style="display:none;margin-bottom:1.5rem;border-radius:0.75rem;border:1px solid rgba(232,184,75,0.3);background:rgba(232,184,75,0.08);padding:0.9rem 1rem;font-size:0.75rem;color:rgba(232,236,241,0.75);line-height:1.6;">
+          A logo/photo attached here won't reach your inbox yet — 2-minute setup needed in
+          <code style="color:#E8B84B;">js/app.js</code> (see the comment at the top of that file). Text details still email fine either way.
+        </div>
         <form id="order-form">
           <div class="field">
             <div class="field-label">Finish</div>
@@ -199,33 +203,79 @@
   <!-- ================= live activity widget ================= -->
   <div id="live-activity"></div>
 
-  <!-- ================= admin (info panel — see js/data.js to actually add/edit tags) ================= -->
-  <button id="admin-toggle" title="How to edit this site">⚙</button>
+  <!-- ================= admin ================= -->
+  <button id="admin-toggle" title="Manage tags">⚙</button>
   <div id="admin-overlay">
-    <div class="glass-strong" style="width:100%;max-width:32rem;padding:1.5rem;max-height:85vh;overflow-y:auto;">
+    <div class="glass-strong" style="width:100%;max-width:34rem;padding:1.5rem;max-height:85vh;overflow-y:auto;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-        <h3 class="font-display" style="font-size:1.125rem;font-weight:600;color:#fff;">Editing this site</h3>
+        <h3 class="font-display" style="font-size:1.125rem;font-weight:600;color:#fff;">Manage tags</h3>
         <button id="admin-close" style="background:none;border:none;color:rgba(201,205,211,0.5);font-size:1.1rem;">✕</button>
       </div>
-      <p style="font-size:0.85rem;color:rgba(201,205,211,0.7);line-height:1.7;">
-        This is a plain static site — no build step, no backend. Everything you see
-        (tags, colorways, prices, clients) comes from one file:
-        <code style="color:#E8B84B;">js/data.js</code>.
-      </p>
-      <p style="margin-top:1rem;font-size:0.85rem;color:rgba(201,205,211,0.7);line-height:1.7;">
-        To add or change a tag, colorway, or price: open <code style="color:#E8B84B;">js/data.js</code>,
-        edit the relevant array, and re-upload just that one file. Refresh the page — no build,
-        no Actions, nothing else to run.
-      </p>
-      <p style="margin-top:1rem;font-size:0.85rem;color:rgba(201,205,211,0.7);line-height:1.7;">
-        To add a logo image, drop the file in <code style="color:#E8B84B;">logos/</code> and
-        reference it as <code style="color:#E8B84B;">logo: "logos/yourfile.png"</code> in that
-        tag's entry.
-      </p>
+
+      <!-- shown when no backend is configured at all -->
+      <div id="admin-no-backend" style="display:none;">
+        <p style="font-size:0.85rem;color:rgba(201,205,211,0.7);line-height:1.7;">
+          This site isn't connected to a live backend yet, so tags are edited by hand in
+          <code style="color:#E8B84B;">js/data.js</code> and re-uploaded.
+        </p>
+        <p style="margin-top:1rem;font-size:0.85rem;color:rgba(201,205,211,0.7);line-height:1.7;">
+          To add tags from right here in the browser instead — with no code editing — see
+          "Live tag management" in <code style="color:#E8B84B;">README.md</code> for a
+          2-minute one-time setup.
+        </p>
+      </div>
+
+      <!-- shown when a backend exists but no one's signed in -->
+      <div id="admin-login" style="display:none;">
+        <p style="font-size:0.8rem;color:rgba(201,205,211,0.6);margin-bottom:1.25rem;">Sign in to add or remove tags.</p>
+        <form id="admin-login-form">
+          <label class="field">
+            <div class="field-label">Email</div>
+            <input required type="email" class="input" id="admin-email" />
+          </label>
+          <label class="field">
+            <div class="field-label">Password</div>
+            <input required type="password" class="input" id="admin-password" />
+          </label>
+          <div id="admin-login-error" style="display:none;font-size:0.75rem;color:#f87171;margin-bottom:1rem;"></div>
+          <button type="submit" class="btn-gold" style="width:100%;">Sign in</button>
+        </form>
+      </div>
+
+      <!-- shown once signed in -->
+      <div id="admin-dashboard" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+          <span style="font-size:0.75rem;color:rgba(201,205,211,0.5);" id="admin-signed-in-as"></span>
+          <button id="admin-signout" style="background:none;border:none;color:#E8B84B;font-size:0.75rem;">Sign out</button>
+        </div>
+
+        <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(201,205,211,0.4);margin-bottom:0.5rem;">Current tags</div>
+        <div id="admin-tag-list" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.75rem;"></div>
+
+        <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(201,205,211,0.4);margin-bottom:0.75rem;">Add a tag</div>
+        <form id="admin-add-form">
+          <input required class="input" placeholder="Name" id="admin-name" style="margin-bottom:0.6rem;" />
+          <input class="input" placeholder="Tagline" id="admin-tagline" style="margin-bottom:0.6rem;" />
+          <textarea class="input" placeholder="Description" id="admin-description" rows="2" style="margin-bottom:0.6rem;resize:none;"></textarea>
+          <input class="input" placeholder="Live URL (https://...)" id="admin-url" style="margin-bottom:0.6rem;" />
+          <div style="display:flex;gap:0.6rem;margin-bottom:0.6rem;">
+            <input class="input" placeholder="Accent color e.g. #22D3EE" id="admin-accent" value="#E8B84B" />
+            <input class="input" placeholder="Base color e.g. #0a1a2e" id="admin-basecolor" value="#16181b" />
+          </div>
+          <div class="dropzone" id="admin-dropzone" style="margin-bottom:0.75rem;">
+            <div class="dz-preview"><div class="placeholder">📎</div></div>
+            <div class="hint">Click to attach a logo (optional)</div>
+            <input type="file" accept="image/*" id="admin-logo-input" style="display:none;" />
+          </div>
+          <div id="admin-add-error" style="display:none;font-size:0.75rem;color:#f87171;margin-bottom:0.75rem;"></div>
+          <button type="submit" class="btn-gold" style="width:100%;" id="admin-add-btn">Add tag</button>
+        </form>
+      </div>
     </div>
   </div>
 
   <script src="js/data.js"></script>
   <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/admin.js"></script>
 </body>
 </html>

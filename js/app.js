@@ -1,10 +1,31 @@
 import { createTagScene } from "./scene.js";
+import { subscribeTags } from "./tags-store.js";
 
 // Every order request opens the visitor's email app addressed here —
 // change this if the inbox should ever be different.
 const ORDER_INBOX = "nexauraconsultant@gmail.com";
 
-const TAGS_LOCAL = window.TAGS;
+// ============================================================
+// OPTIONAL BUT RECOMMENDED — lets the order form actually send the
+// uploaded logo/photo to your inbox (a plain mailto: link can't carry
+// attachments, so without this the photo never reaches you).
+//
+// 2-minute one-time setup:
+//   1. Go to https://formspree.io -> sign up free with nexauraconsultant@gmail.com
+//   2. "New Form" -> copy the endpoint it gives you, looks like:
+//      https://formspree.io/f/xxxxabcd
+//   3. Paste it below, replacing the placeholder.
+//   4. Re-upload this one file (js/app.js). Done — no other setup.
+//
+// Until you do this, the form still works via a mailto: link (text
+// details reach your inbox), it just can't include the photo.
+// ============================================================
+const FORMSPREE_ENDPOINT = "PASTE_YOUR_FORMSPREE_ENDPOINT_HERE";
+function isFormspreeConfigured() {
+  return FORMSPREE_ENDPOINT.startsWith("https://formspree.io/");
+}
+
+let TAGS_LOCAL = window.TAGS; // replaced live if a Firestore backend is configured (see tags-store.js)
 const COLORWAYS_LOCAL = window.COLORWAYS;
 const TIERS_LOCAL = window.TIERS;
 const LIVE_EVENTS_LOCAL = window.LIVE_EVENTS;
@@ -240,6 +261,11 @@ function renderOrderPortal() {
   syncTierSelectionUI();
   updateOrderTotal();
 
+  if (!isFormspreeConfigured()) {
+    const note = document.getElementById("formspree-setup-note");
+    if (note) note.style.display = "block";
+  }
+
   const dropzone = document.getElementById("order-dropzone");
   const fileInput = document.getElementById("order-logo-input");
   dropzone.addEventListener("click", () => fileInput.click());
@@ -259,10 +285,11 @@ function renderOrderPortal() {
     reader.readAsDataURL(file);
   });
 
-  document.getElementById("order-form").addEventListener("submit", (e) => {
+  document.getElementById("order-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = document.getElementById("order-form");
     const success = document.getElementById("order-success");
+    const submitBtn = document.getElementById("order-submit-btn");
     const colorway = COLORWAYS_LOCAL.find((c) => c.id === selectedColorwayId);
     const tier = TIERS_LOCAL.find((t) => t.id === selectedTierId);
     const qty = Math.max(1, Number(document.getElementById("order-qty").value) || 1);
@@ -270,11 +297,48 @@ function renderOrderPortal() {
     const name = document.getElementById("order-name").value;
     const email = document.getElementById("order-email").value;
     const message = document.getElementById("order-message").value;
-    const hasLogo = fileInput.files.length > 0;
+    const logoFile = fileInput.files[0] || null;
 
-    // Sends the request straight to your inbox via a mailto: link — no
-    // backend or third-party form service needed. Opens the visitor's own
-    // email app with everything pre-filled; they just hit send.
+    if (isFormspreeConfigured()) {
+      // Sends the whole thing — including the attached logo/photo — to
+      // Formspree, which forwards it straight to ORDER_INBOX by email.
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Sending...";
+      try {
+        const data = new FormData();
+        data.append("name", name);
+        data.append("email", email);
+        data.append("finish", `${colorway.name} (${fmtUsd(colorway.price)})`);
+        data.append("tier", `${tier.name} (${fmtUsd(tier.price)})`);
+        data.append("quantity", qty);
+        data.append("total", fmtUsd(total));
+        if (message) data.append("message", message);
+        if (logoFile) data.append("logo", logoFile);
+
+        const res = await fetch(FORMSPREE_ENDPOINT, {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: data,
+        });
+
+        if (res.ok) {
+          showOrderSuccess(form, success, colorway, tier, total, true);
+        } else {
+          submitBtn.disabled = false;
+          updateOrderTotal();
+          alert("Something went wrong sending your request — please try again, or email us directly.");
+        }
+      } catch (err) {
+        submitBtn.disabled = false;
+        updateOrderTotal();
+        alert("Couldn't reach the form service — check your connection and try again.");
+      }
+      return;
+    }
+
+    // Formspree not set up yet — fall back to a mailto: link. This still
+    // reaches the inbox, but can't carry the attached logo/photo (mailto
+    // links don't support attachments).
     const subject = `Nexaura Tag order — ${name || "New request"}`;
     const bodyLines = [
       `Name: ${name}`,
@@ -284,14 +348,27 @@ function renderOrderPortal() {
       `Quantity: ${qty}`,
       `Total: ${fmtUsd(total)}`,
       message ? `Message: ${message}` : "",
-      hasLogo ? "\n(They attached a logo/photo in the form — ask them to reply with it, mailto links can't carry attachments.)" : "",
+      logoFile ? "\n(They attached a logo/photo in the form — ask them to reply with it; mailto links can't carry attachments. Set up Formspree — see README — to receive attachments automatically.)" : "",
     ].filter(Boolean);
     const mailtoLink = `mailto:${ORDER_INBOX}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
-
     window.location.href = mailtoLink;
+    showOrderSuccess(form, success, colorway, tier, total, false);
+  });
 
-    form.style.display = "none";
-    success.innerHTML = `
+  document.getElementById("order-qty").addEventListener("input", updateOrderTotal);
+}
+
+function showOrderSuccess(form, success, colorway, tier, total, sentDirectly) {
+  form.style.display = "none";
+  success.innerHTML = sentDirectly
+    ? `
+      <div style="font-size:1.75rem;margin-bottom:0.75rem;">✦</div>
+      <p style="font-size:1.125rem;color:#fff;">You're on the list.</p>
+      <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">
+        ${colorway.name} · ${tier.name} · ${fmtUsd(total)} total — sent straight to Nexaura, logo/photo included.
+      </p>
+    `
+    : `
       <div style="font-size:1.75rem;margin-bottom:0.75rem;">✦</div>
       <p style="font-size:1.125rem;color:#fff;">Almost there.</p>
       <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">
@@ -299,10 +376,7 @@ function renderOrderPortal() {
         ${colorway.name} · ${tier.name} · ${fmtUsd(total)} total.
       </p>
     `;
-    success.style.display = "block";
-  });
-
-  document.getElementById("order-qty").addEventListener("input", updateOrderTotal);
+  success.style.display = "block";
 }
 
 function updateOrderTotal() {
@@ -343,15 +417,9 @@ function initLiveActivity() {
   setTimeout(cycle, 2200);
 }
 
-// ---------- admin (simplified — no build/backend risk) ----------
-function initAdmin() {
-  document.getElementById("admin-toggle").addEventListener("click", () => {
-    document.getElementById("admin-overlay").classList.add("open");
-  });
-  document.getElementById("admin-close").addEventListener("click", () => {
-    document.getElementById("admin-overlay").classList.remove("open");
-  });
-}
+// admin panel open/close/login/CRUD logic lives entirely in js/admin.js now,
+// loaded as its own module from index.html — it owns the toggle/close
+// buttons so there's exactly one listener on each.
 
 // ---------- init ----------
 window.addEventListener("tag-selected", (e) => setActiveTag(e.detail.id));
@@ -359,12 +427,25 @@ window.addEventListener("tag-selected", (e) => setActiveTag(e.detail.id));
 document.getElementById("footer-year").textContent = new Date().getFullYear();
 
 runIntro();
-renderLineup();
 renderColorways();
 renderPricing();
 renderOrderPortal();
 initLiveActivity();
-initAdmin();
 initScrollReveal();
 
-window.__tagScene = createTagScene(document.getElementById("hero-canvas-wrap"), TAGS_LOCAL);
+// Tags (and the rotating 3D cards + Lineup grid built from them) come from
+// Firestore if a backend is configured, otherwise from the local js/data.js
+// list — either way this fires once immediately, then again any time a
+// tag is added/removed from the live backend, rebuilding the 3D scene and
+// grid so new tags show up without anyone needing to refresh.
+subscribeTags((tags) => {
+  TAGS_LOCAL = tags;
+  renderLineup();
+  initScrollReveal(); // newly-rendered Lineup cards need their own observer pass
+
+  if (window.__tagScene) window.__tagScene.destroy();
+  const container = document.getElementById("hero-canvas-wrap");
+  container.innerHTML = "";
+  window.__tagScene = createTagScene(container, TAGS_LOCAL);
+  if (activeTagId) window.__tagScene.setActive(activeTagId);
+});
