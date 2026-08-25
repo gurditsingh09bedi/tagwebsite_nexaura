@@ -277,17 +277,6 @@ function renderOrderPortal() {
   syncTierSelectionUI();
   updateOrderTotal();
 
-  if (!isFormspreeConfigured()) {
-    const note = document.getElementById("formspree-setup-note");
-    if (note) note.style.display = "block";
-  } else {
-    // Formspree is set up, but its free plan still rejects any submission
-    // that includes a file — this note is the accurate, permanent state
-    // (not a "still needs setup" message) unless the plan gets upgraded.
-    const attachNote = document.getElementById("formspree-attachment-note");
-    if (attachNote) attachNote.style.display = "block";
-  }
-
   const dropzone = document.getElementById("order-dropzone");
   const fileInput = document.getElementById("order-logo-input");
   dropzone.addEventListener("click", () => fileInput.click());
@@ -377,7 +366,7 @@ function renderOrderPortal() {
       `Quantity: ${qty}`,
       `Total: ${fmtUsd(total)}`,
       message ? `Message: ${message}` : "",
-      logoFile ? "\n(They attached a logo/photo in the form — ask them to reply with it; mailto links can't carry attachments. Set up Formspree — see README — to receive attachments automatically.)" : "",
+      logoFile ? "\n(They also attached a logo/photo in the form — ask them to reply with it.)" : "",
     ].filter(Boolean);
     const mailtoLink = `mailto:${ORDER_INBOX}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
     window.location.href = mailtoLink;
