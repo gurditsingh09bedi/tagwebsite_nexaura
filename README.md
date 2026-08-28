@@ -67,6 +67,21 @@ them, and check the form's Settings tab for a spam-filter toggle to turn
 down for future submissions. This doesn't affect the Orders panel above —
 that's a separate, always-reliable path regardless of what Formspree does.
 
+## Editing prices live (Pricing tab)
+
+The ⚙ **Manage** panel has a third tab, **Pricing** — edit any colorway's
+or service tier's price right there, type a new number, click Save. It
+updates instantly for every visitor with the page open (Colorways
+section, Pricing section, and the Order form all read from the same
+live price), no re-upload needed.
+
+This only requires the same Firebase setup already covered above — if
+you've done that for tags, pricing works automatically too (just make
+sure the Firestore rules include the `colorways` and `tiers` blocks
+shown in the rules snippet above). Everything else about each colorway
+(name, description, finish, material, colors) still lives in
+`js/data.js` and isn't editable from the panel — only price is.
+
 ## Order status tracking
 
 Every order gets a short, unique **order ID** (like `NX-A3F9K2`) the
@@ -142,6 +157,14 @@ Firebase backend (10 minutes, one time):
          allow get: if true;
          allow list: if request.auth != null;
          allow update, delete: if request.auth != null;
+       }
+       match /colorways/{id} {
+         allow read: if true;
+         allow write: if request.auth != null;
+       }
+       match /tiers/{id} {
+         allow read: if true;
+         allow write: if request.auth != null;
        }
      }
    }

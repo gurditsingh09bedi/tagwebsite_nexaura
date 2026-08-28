@@ -1,6 +1,7 @@
 import { subscribeTags, addTagRemote, deleteTagRemote, signInAdmin, signOutAdmin, onAuthChange } from "./tags-store.js";
 import { subscribeOrders, updateOrderStatus, ORDER_STAGES, stageIndex } from "./orders-store.js";
 import { sendOrderStatusEmail, isEmailJsConfigured } from "./email-notify.js";
+import { subscribeColorwayPrices, subscribeTierPrices, updateColorwayPrice, updateTierPrice } from "./pricing-store.js";
 import { isFirebaseConfigured } from "./firebase-config.js";
 import { compressImageToDataUrl } from "./img-utils.js";
 
@@ -27,6 +28,19 @@ subscribeTags((tags, isLive) => {
   currentTags = tags;
   tagsAreLive = isLive;
   renderTagList();
+});
+
+// ---------- pricing ----------
+// Publicly readable (like tags) — no need to wait for auth like orders below.
+let currentColorways = [];
+let currentTiers = [];
+subscribeColorwayPrices((colorways) => {
+  currentColorways = colorways;
+  renderPricingLists();
+});
+subscribeTierPrices((tiers) => {
+  currentTiers = tiers;
+  renderPricingLists();
 });
 
 // ---------- orders ----------
@@ -89,28 +103,26 @@ document.getElementById("order-photo-lightbox")?.addEventListener("click", (e) =
   if (e.target.id === "order-photo-lightbox") e.currentTarget.classList.remove("open");
 });
 
-// ---------- tab switching (Tags / Orders) inside the dashboard ----------
-const tabTags = document.getElementById("admin-tab-tags");
-const tabOrders = document.getElementById("admin-tab-orders");
-const panelTags = document.getElementById("admin-panel-tags");
-const panelOrders = document.getElementById("admin-panel-orders");
+// ---------- tab switching (Tags / Orders / Pricing) inside the dashboard ----------
+const tabs = {
+  tags: { btn: document.getElementById("admin-tab-tags"), panel: document.getElementById("admin-panel-tags") },
+  orders: { btn: document.getElementById("admin-tab-orders"), panel: document.getElementById("admin-panel-orders") },
+  pricing: { btn: document.getElementById("admin-tab-pricing"), panel: document.getElementById("admin-panel-pricing") },
+};
 
 function updateOrdersBadge() {
   const badge = document.getElementById("admin-orders-badge");
   if (badge) badge.textContent = currentOrders.length ? String(currentOrders.length) : "";
 }
 
-tabTags?.addEventListener("click", () => {
-  tabTags.classList.add("admin-tab-active");
-  tabOrders.classList.remove("admin-tab-active");
-  panelTags.style.display = "block";
-  panelOrders.style.display = "none";
-});
-tabOrders?.addEventListener("click", () => {
-  tabOrders.classList.add("admin-tab-active");
-  tabTags.classList.remove("admin-tab-active");
-  panelOrders.style.display = "block";
-  panelTags.style.display = "none";
+Object.entries(tabs).forEach(([key, { btn }]) => {
+  btn?.addEventListener("click", () => {
+    Object.entries(tabs).forEach(([otherKey, { btn: otherBtn, panel: otherPanel }]) => {
+      const active = otherKey === key;
+      otherBtn.classList.toggle("admin-tab-active", active);
+      otherPanel.style.display = active ? "block" : "none";
+    });
+  });
 });
 
 // ---------- render: tags ----------
@@ -137,6 +149,57 @@ function renderTagList() {
         await deleteTagRemote(btn.dataset.id);
       } catch (err) {
         alert(err.message || "Couldn't remove that tag.");
+      }
+    });
+  });
+}
+
+// ---------- render: pricing ----------
+function renderPricingLists() {
+  const colorwayList = document.getElementById("admin-colorway-prices");
+  if (colorwayList) {
+    colorwayList.innerHTML = currentColorways.map((c) => `
+      <div style="display:flex;align-items:center;gap:0.6rem;background:rgba(255,255,255,0.04);border-radius:0.5rem;padding:0.5rem 0.75rem;">
+        <span style="flex:1;font-size:0.8rem;color:#fff;">${c.name}</span>
+        <span style="font-size:0.75rem;color:rgba(201,205,211,0.4);">£</span>
+        <input type="number" step="0.01" min="0" value="${c.price}" class="input price-input" data-kind="colorway" data-id="${c.id}" style="width:5.5rem;padding:0.4rem 0.6rem;" />
+        <button type="button" class="price-save-btn" data-kind="colorway" data-id="${c.id}">Save</button>
+      </div>
+    `).join("");
+  }
+
+  const tierList = document.getElementById("admin-tier-prices");
+  if (tierList) {
+    tierList.innerHTML = currentTiers.map((t) => `
+      <div style="display:flex;align-items:center;gap:0.6rem;background:rgba(255,255,255,0.04);border-radius:0.5rem;padding:0.5rem 0.75rem;">
+        <span style="flex:1;font-size:0.8rem;color:#fff;">${t.name}</span>
+        <span style="font-size:0.75rem;color:rgba(201,205,211,0.4);">£</span>
+        <input type="number" step="0.01" min="0" value="${t.price}" class="input price-input" data-kind="tier" data-id="${t.id}" style="width:5.5rem;padding:0.4rem 0.6rem;" />
+        <button type="button" class="price-save-btn" data-kind="tier" data-id="${t.id}">Save</button>
+      </div>
+    `).join("");
+  }
+
+  document.querySelectorAll(".price-save-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const row = btn.closest("div");
+      const input = row.querySelector(".price-input");
+      const price = Number(input.value);
+      if (!(price >= 0)) {
+        alert("Enter a valid price.");
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "...";
+      try {
+        if (btn.dataset.kind === "colorway") await updateColorwayPrice(btn.dataset.id, price);
+        else await updateTierPrice(btn.dataset.id, price);
+        btn.textContent = "Saved";
+        setTimeout(() => { btn.textContent = "Save"; btn.disabled = false; }, 1200);
+      } catch (err) {
+        alert(err.message || "Couldn't save that price.");
+        btn.textContent = "Save";
+        btn.disabled = false;
       }
     });
   });

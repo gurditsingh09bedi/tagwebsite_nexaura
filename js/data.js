@@ -69,7 +69,7 @@ const LIVE_EVENTS = [
   { icon: "📦", text: "New order — 30 units to Sydney" },
 ];
 
-const fmtUsd = (n) => `$${n.toFixed(2)}`;
+const fmtGbp = (n) => `£${n.toFixed(2)}`;
 
 // exposed as globals so app.js (a module) can read them without a bundler
 // Order tracking stages, in order. Admin moves an order through these one
@@ -89,4 +89,4 @@ window.COLORWAYS = COLORWAYS;
 window.TIERS = TIERS;
 window.LIVE_EVENTS = LIVE_EVENTS;
 window.ORDER_STAGES = ORDER_STAGES;
-window.fmtUsd = fmtUsd;
+window.fmtGbp = fmtGbp;

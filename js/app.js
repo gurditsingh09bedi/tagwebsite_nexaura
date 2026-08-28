@@ -3,6 +3,7 @@ import { subscribeTags } from "./tags-store.js";
 import { submitOrder, ordersBackendAvailable, getOrderById, ORDER_STAGES, stageIndex } from "./orders-store.js";
 import { compressImageToDataUrl } from "./img-utils.js";
 import { sendOrderStatusEmail, isEmailJsConfigured } from "./email-notify.js";
+import { subscribeColorwayPrices, subscribeTierPrices } from "./pricing-store.js";
 
 // Every order request opens the visitor's email app addressed here —
 // change this if the inbox should ever be different.
@@ -29,11 +30,11 @@ function isFormspreeConfigured() {
 }
 
 let TAGS_LOCAL = window.TAGS; // replaced live if a Firestore backend is configured (see tags-store.js)
-const COLORWAYS_LOCAL = window.COLORWAYS;
-const TIERS_LOCAL = window.TIERS;
+let COLORWAYS_LOCAL = window.COLORWAYS;
+let TIERS_LOCAL = window.TIERS;
 const LIVE_EVENTS_LOCAL = window.LIVE_EVENTS;
 const ORDER_STAGES_LOCAL = window.ORDER_STAGES;
-const fmtUsd = window.fmtUsd;
+const fmtGbp = window.fmtGbp;
 
 let selectedColorwayId = COLORWAYS_LOCAL[0].id;
 let selectedTierId = TIERS_LOCAL[2].id;
@@ -157,7 +158,7 @@ function renderColorways() {
       ${colorwayArt(c)}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1.5rem;margin-bottom:0.25rem;">
         <span class="mono-label" style="font-size:10px;color:rgba(252,211,77,0.5);">0${i + 1}</span>
-        <span class="price-badge">${fmtUsd(c.price)}</span>
+        <span class="price-badge">${fmtGbp(c.price)}</span>
       </div>
       <div style="display:flex;align-items:center;gap:0.5rem;">
         <h3 class="font-display" style="font-size:1.25rem;font-weight:600;color:#fff;">${c.name}</h3>
@@ -201,7 +202,7 @@ function renderPricing() {
   grid.innerHTML = TIERS_LOCAL.map((t) => `
     <button type="button" class="glass tier-card reveal" data-tier-id="${t.id}" style="text-align:left;width:100%;">
       <div class="mono-label" style="font-size:10px;color:rgba(252,211,77,0.5);margin-bottom:0.5rem;">${t.name}</div>
-      <div class="tier-price">${fmtUsd(t.price)}<span class="unit">/ tag</span></div>
+      <div class="tier-price">${fmtGbp(t.price)}<span class="unit">/ tag</span></div>
       <p style="font-size:0.75rem;color:rgba(201,205,211,0.62);margin-bottom:1.25rem;">${t.tagline}</p>
       <ul class="tier-features">${t.features.map((f) => `<li>${f}</li>`).join("")}</ul>
       <div class="tier-cta plain">Choose ${t.name}</div>
@@ -254,10 +255,15 @@ function pickTier(id) {
 }
 
 // ---------- order portal ----------
-function renderOrderPortal() {
+// Split so price updates (from the admin panel, live) can refresh just the
+// swatches/tier-buttons/total without re-adding the dropzone/file-input/
+// form-submit listeners a second time — renderOrderPortal() below calls
+// this once and then does that one-time listener setup; the price
+// subscription later only calls renderOrderPricingControls().
+function renderOrderPricingControls() {
   const swatches = document.getElementById("order-colorway-swatches");
   swatches.innerHTML = COLORWAYS_LOCAL.map((c) => `
-    <button type="button" class="swatch-btn" data-colorway-id="${c.id}" title="${c.name} — ${fmtUsd(c.price)}">
+    <button type="button" class="swatch-btn" data-colorway-id="${c.id}" title="${c.name} — ${fmtGbp(c.price)}">
       <span class="swatch-dot" style="background:linear-gradient(160deg, ${c.gradient[0]}, ${c.gradient[1]}); box-shadow:0 0 10px ${c.accent}55;"></span>
       <span class="swatch-name">${c.name}</span>
     </button>
@@ -270,7 +276,7 @@ function renderOrderPortal() {
   tierButtons.innerHTML = TIERS_LOCAL.map((t) => `
     <button type="button" class="tier-btn-sm" data-tier-id="${t.id}">
       <div class="name">${t.name}</div>
-      <div class="price">${fmtUsd(t.price)}</div>
+      <div class="price">${fmtGbp(t.price)}</div>
     </button>
   `).join("");
   tierButtons.querySelectorAll("[data-tier-id]").forEach((btn) => {
@@ -280,6 +286,10 @@ function renderOrderPortal() {
   syncColorwaySelectionUI();
   syncTierSelectionUI();
   updateOrderTotal();
+}
+
+function renderOrderPortal() {
+  renderOrderPricingControls();
 
   const dropzone = document.getElementById("order-dropzone");
   const fileInput = document.getElementById("order-logo-input");
@@ -322,9 +332,9 @@ function renderOrderPortal() {
     // submit flow, it just means no order ID / tracking / photo storage.
     let orderSavedWithPhoto = false;
     let orderId = null;
-    const finishLabel = `${colorway.name} (${fmtUsd(colorway.price)})`;
-    const tierLabel = `${tier.name} (${fmtUsd(tier.price)})`;
-    const totalLabel = fmtUsd(total);
+    const finishLabel = `${colorway.name} (${fmtGbp(colorway.price)})`;
+    const tierLabel = `${tier.name} (${fmtGbp(tier.price)})`;
+    const totalLabel = fmtGbp(total);
     if (ordersBackendAvailable()) {
       try {
         const logoDataUrl = logoFile ? await compressImageToDataUrl(logoFile) : null;
@@ -377,10 +387,10 @@ function renderOrderPortal() {
         const data = new FormData();
         data.append("name", name);
         data.append("email", email);
-        data.append("finish", `${colorway.name} (${fmtUsd(colorway.price)})`);
-        data.append("tier", `${tier.name} (${fmtUsd(tier.price)})`);
+        data.append("finish", `${colorway.name} (${fmtGbp(colorway.price)})`);
+        data.append("tier", `${tier.name} (${fmtGbp(tier.price)})`);
         data.append("quantity", qty);
-        data.append("total", fmtUsd(total));
+        data.append("total", fmtGbp(total));
         if (message) data.append("message", message);
         if (needsManualLogoEmail) {
           data.append("note", `They attached a logo/photo (${logoFile.name}) in the form that couldn't be included here — ask them to send it directly.`);
@@ -416,10 +426,10 @@ function renderOrderPortal() {
     const bodyLines = [
       `Name: ${name}`,
       `Email: ${email}`,
-      `Finish: ${colorway.name} (${fmtUsd(colorway.price)})`,
-      `Tier: ${tier.name} (${fmtUsd(tier.price)})`,
+      `Finish: ${colorway.name} (${fmtGbp(colorway.price)})`,
+      `Tier: ${tier.name} (${fmtGbp(tier.price)})`,
       `Quantity: ${qty}`,
-      `Total: ${fmtUsd(total)}`,
+      `Total: ${fmtGbp(total)}`,
       message ? `Message: ${message}` : "",
       logoFile ? "\n(They also attached a logo/photo in the form — ask them to reply with it.)" : "",
     ].filter(Boolean);
@@ -461,7 +471,7 @@ function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, ha
       <div style="font-size:1.75rem;margin-bottom:0.75rem;">✦</div>
       <p style="font-size:1.125rem;color:#fff;">You're on the list.</p>
       <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">
-        ${colorway.name} · ${tier.name} · ${fmtUsd(total)} total — sent straight to Nexaura.
+        ${colorway.name} · ${tier.name} · ${fmtGbp(total)} total — sent straight to Nexaura.
         ${hadLogoNotSent ? " Your attached photo couldn't be included automatically — send it directly below." : ""}
         ${orderSavedWithPhoto ? " Your attached photo is saved with this order." : ""}
       </p>
@@ -473,7 +483,7 @@ function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, ha
       <p style="font-size:1.125rem;color:#fff;">Almost there.</p>
       <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">
         Your email app should have opened with the request filled in — hit send there to reach Nexaura.
-        ${colorway.name} · ${tier.name} · ${fmtUsd(total)} total.
+        ${colorway.name} · ${tier.name} · ${fmtGbp(total)} total.
         ${orderSavedWithPhoto ? " Your attached photo is saved with this order." : ""}
       </p>
       ${orderIdBlock}
@@ -490,10 +500,10 @@ function updateOrderTotal() {
   const total = unitTotal * qty;
   const desc = document.getElementById("order-total-desc");
   const amount = document.getElementById("order-total-amount");
-  if (desc) desc.textContent = `${colorway.name} (${fmtUsd(colorway.price)}) + ${tier.name} (${fmtUsd(tier.price)})${qty > 1 ? ` × ${qty}` : ""}`;
-  if (amount) amount.textContent = fmtUsd(total);
+  if (desc) desc.textContent = `${colorway.name} (${fmtGbp(colorway.price)}) + ${tier.name} (${fmtGbp(tier.price)})${qty > 1 ? ` × ${qty}` : ""}`;
+  if (amount) amount.textContent = fmtGbp(total);
   const submitBtn = document.getElementById("order-submit-btn");
-  if (submitBtn) submitBtn.textContent = `Submit Request — ${fmtUsd(total)}`;
+  if (submitBtn) submitBtn.textContent = `Submit Request — ${fmtGbp(total)}`;
 }
 
 // ---------- live activity ----------
@@ -623,4 +633,21 @@ subscribeTags((tags) => {
   container.innerHTML = "";
   window.__tagScene = createTagScene(container, TAGS_LOCAL);
   if (activeTagId) window.__tagScene.setActive(activeTagId);
+});
+
+// Colorway/tier prices — same fallback-then-live pattern as tags: render
+// once immediately from js/data.js, then again whenever the admin panel
+// changes a price, for every visitor with the page open, no refresh needed.
+subscribeColorwayPrices((colorways) => {
+  COLORWAYS_LOCAL = colorways;
+  renderColorways();
+  renderOrderPricingControls();
+  initScrollReveal();
+});
+
+subscribeTierPrices((tiers) => {
+  TIERS_LOCAL = tiers;
+  renderPricing();
+  renderOrderPricingControls();
+  initScrollReveal();
 });
