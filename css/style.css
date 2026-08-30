@@ -229,6 +229,18 @@ button { font-family: inherit; cursor: pointer; }
 .tier-card { position: relative; padding: 1.5rem; transition: transform 0.3s; }
 .tier-card:hover { transform: translateY(-4px); }
 .tier-card.featured { box-shadow: 0 0 24px rgba(232,184,75,0.45), 0 0 60px rgba(232,184,75,0.15); border: 1px solid rgba(232,184,75,0.4) !important; }
+.tier-select-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
 .tier-badge {
   position: absolute; top: -0.75rem; left: 50%; transform: translateX(-50%); border-radius: 9999px;
   background: linear-gradient(90deg, #E8B84B, #F5D57A); padding: 0.25rem 0.75rem; font-size: 10px; font-weight: 700; color: #031012;

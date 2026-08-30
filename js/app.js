@@ -277,12 +277,14 @@ function pickColorway(id) {
 function renderPricing() {
   const grid = document.getElementById("pricing-grid");
   grid.innerHTML = TIERS_LOCAL.map((t) => `
-    <button type="button" class="glass tier-card reveal" data-tier-id="${t.id}" style="text-align:left;width:100%;">
-      <div class="mono-label" style="font-size:10px;color:rgba(252,211,77,0.5);margin-bottom:0.5rem;">${t.name}</div>
-      <div class="tier-price">${fmtGbp(t.price)}<span class="unit">/ tag</span></div>
-      <p style="font-size:0.75rem;color:rgba(201,205,211,0.62);margin-bottom:1.25rem;">${t.tagline}</p>
-      <ul class="tier-features">${t.features.map((f) => `<li>${f}</li>`).join("")}</ul>
-      <div class="tier-cta plain">Choose ${t.name}</div>
+    <div class="glass tier-card reveal" data-tier-id="${t.id}">
+      <button type="button" class="tier-select-btn" data-tier-select="${t.id}">
+        <div class="mono-label" style="font-size:10px;color:rgba(252,211,77,0.5);margin-bottom:0.5rem;">${t.name}</div>
+        <div class="tier-price">${fmtGbp(t.price)}<span class="unit">/ tag</span></div>
+        <p style="font-size:0.75rem;color:rgba(201,205,211,0.62);margin-bottom:1.25rem;">${t.tagline}</p>
+        <ul class="tier-features">${t.features.map((f) => `<li>${f}</li>`).join("")}</ul>
+        <div class="tier-cta plain">Choose ${t.name}</div>
+      </button>
 
       <div class="tier-demo">
         <div class="tier-demo-label">See it in action <span style="opacity:0.5;">(illustration)</span></div>
@@ -301,12 +303,12 @@ function renderPricing() {
           </div>
         </div>
       </div>
-    </button>
+    </div>
   `).join("");
 
-  grid.querySelectorAll("[data-tier-id]").forEach((btn) => {
+  grid.querySelectorAll("[data-tier-select]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      pickTier(btn.dataset.tierId);
+      pickTier(btn.dataset.tierSelect);
       document.getElementById("order")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
