@@ -256,7 +256,14 @@ function updateMaterialRow(materialId) {
 function openColorwayLightbox(id) {
   const variant = COLORWAYS_LOCAL.find((c) => c.id === id);
   if (!variant) return;
-  document.getElementById("colorway-lightbox-content").innerHTML = colorwayArt(variant, true);
+  // Real photo gets natural sizing (contain, capped to viewport) here — the
+  // width:100%/height:100% version from colorwayArt() is meant for the
+  // fixed-size material-row thumbnail, not this popup, which was the bug
+  // (that box had no defined height here, so the image rendered at 0 size).
+  const content = variant.photo
+    ? `<img src="${variant.photo}" alt="${variant.name}" />`
+    : colorwayArt(variant, true);
+  document.getElementById("colorway-lightbox-content").innerHTML = content;
   document.getElementById("colorway-lightbox-caption").textContent = `${variant.name} — ${fmtGbp(variant.price)}`;
   document.getElementById("colorway-lightbox").classList.add("open");
 }
@@ -286,23 +293,9 @@ function renderPricing() {
         <div class="tier-cta plain">Choose ${t.name}</div>
       </button>
 
-      <div class="tier-demo">
-        <div class="tier-demo-label">See it in action <span style="opacity:0.5;">(illustration)</span></div>
-        <div class="tier-demo-stage">
-          <div class="tier-demo-phone">
-            <span class="tier-demo-tap-pulse"></span>
-            <span style="font-size:1.1rem;">📱</span>
-            <span class="tier-demo-caption">Their phone</span>
-          </div>
-          <div class="tier-demo-arrow">›››</div>
-          <div class="tier-demo-phone">
-            <div class="tier-demo-info">
-              ${t.features.slice(0, 2).map((f) => `<div>✓ ${f}</div>`).join("")}
-            </div>
-            <span class="tier-demo-caption">Appears instantly</span>
-          </div>
-        </div>
-      </div>
+      <button type="button" class="tier-demo-open-btn" data-demo-tier="${t.id}">
+        ▶ Click to see the demo
+      </button>
     </div>
   `).join("");
 
@@ -312,7 +305,40 @@ function renderPricing() {
       document.getElementById("order")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
+  grid.querySelectorAll("[data-demo-tier]").forEach((btn) => {
+    btn.addEventListener("click", () => openTierDemo(btn.dataset.demoTier));
+  });
   syncTierSelectionUI();
+}
+
+function openTierDemo(tierId) {
+  const tier = TIERS_LOCAL.find((t) => t.id === tierId);
+  if (!tier) return;
+  document.getElementById("tier-demo-modal-title").textContent = `${tier.name} — see it in action`;
+  document.getElementById("tier-demo-modal-stage").innerHTML = `
+    <div class="tier-demo-phone">
+      <span class="tier-demo-tap-pulse"></span>
+      <span style="font-size:1.4rem;">📱</span>
+      <span class="tier-demo-caption">Their phone</span>
+    </div>
+    <div class="tier-demo-arrow">›››</div>
+    <div class="tier-demo-phone">
+      <div class="tier-demo-info">
+        ${tier.features.slice(0, 2).map((f) => `<div>✓ ${f}</div>`).join("")}
+      </div>
+      <span class="tier-demo-caption">Appears instantly</span>
+    </div>
+  `;
+  document.getElementById("tier-demo-modal").classList.add("open");
+}
+
+function initTierDemoModal() {
+  document.getElementById("tier-demo-modal-close")?.addEventListener("click", () => {
+    document.getElementById("tier-demo-modal").classList.remove("open");
+  });
+  document.getElementById("tier-demo-modal")?.addEventListener("click", (e) => {
+    if (e.target.id === "tier-demo-modal") e.currentTarget.classList.remove("open");
+  });
 }
 
 function syncTierSelectionUI() {
@@ -715,6 +741,7 @@ initLiveActivity();
 initScrollReveal();
 initTrackOrder();
 initColorwayLightbox();
+initTierDemoModal();
 
 // Tags (and the rotating 3D cards + Lineup grid built from them) come from
 // Firestore if a backend is configured, otherwise from the local js/data.js
