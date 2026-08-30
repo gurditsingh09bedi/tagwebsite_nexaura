@@ -92,15 +92,22 @@
     <div class="container-xl" style="position:relative;">
       <div class="reveal" style="max-width:36rem;margin-bottom:4rem;">
         <div class="mono-label" style="font-size:12px;color:rgba(252,211,77,0.6);margin-bottom:1rem;">Choose Your Tag</div>
-        <h2 class="section-title font-display">Six finishes.<br />One tap.</h2>
+        <h2 class="section-title font-display">Plastic or metal.<br />Your call.</h2>
         <p style="margin-top:1rem;color:rgba(201,205,211,0.6);">
-          From £11.99 to £35.99. Pick a finish here, then choose a service tier below —
-          your order total updates as you go.
+          From £21.00. Pick a finish below, then a service tier further down —
+          your order total updates as you go. Tap any photo to see it larger.
         </p>
       </div>
-      <div id="colorways-grid" class="card-grid"></div>
+      <div id="colorways-grid"></div>
     </div>
   </section>
+
+  <!-- full-size photo viewer for colorway finishes -->
+  <div id="colorway-lightbox">
+    <button id="colorway-lightbox-close" title="Close">✕</button>
+    <div id="colorway-lightbox-content" class="colorway-lightbox-art"></div>
+    <div id="colorway-lightbox-caption"></div>
+  </div>
 
   <!-- ================= pricing ================= -->
   <section id="pricing" class="section" style="border-top:1px solid rgba(255,255,255,0.05);">

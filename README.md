@@ -30,7 +30,13 @@ Everything editable lives in **`js/data.js`** — one file, plain arrays:
   with `name`, `tagline`, `description`, `accent`, `baseColor`, `url`, and
   optionally `logo: "logos/yourfile.png"` (drop the image in `logos/`
   first).
-- `COLORWAYS` — the 6 finishes and their prices.
+- `COLORWAYS` — 6 finishes grouped into 2 materials (Plastic: Onyx, Jet
+  Black, Imported Pattern; Metal: Metal Black, Black & Gold Plated,
+  Premium Glossy), each with its own price. The Colorways section shows
+  one big photo per material with a row of small swatches next to it —
+  clicking a swatch swaps the photo and price, tap/click the photo itself
+  to see it larger. Real photos: set a variant's `photo: "path/to.jpg"` in
+  this file to use an actual image instead of the generated card art.
 - `TIERS` — the 4 service tiers and their prices.
 
 Edit the array, save, re-upload just `js/data.js`, refresh the page. No
@@ -203,7 +209,7 @@ instead of showing a login form.
   React-Three-Fiber-only helper. Still metallic, still glowing, still
   orbits and reacts to hover/click the same way.
 
-Everything else — the aurora background, the 6 colorways with live order
+Everything else — the aurora background, plastic/metal colorways with live order
 total, the pricing tiers, the cinematic intro, the real JAPP/Nexaura logos
 on the rotating cards — is the same as the last version, just running
 without a build step.

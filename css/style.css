@@ -588,3 +588,168 @@ footer {
   flex-shrink: 0;
 }
 .price-save-btn:disabled { opacity: 0.6; }
+
+/* ---------- colorways: material rows (photo + swatch picker) ---------- */
+.material-row {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 720px) { .material-row { flex-direction: column; align-items: center; text-align: center; } }
+
+.material-row-photo {
+  flex-shrink: 0;
+  width: 9.5rem;
+  height: 15rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-in;
+  background: radial-gradient(ellipse 70% 60% at 50% 35%, rgba(255,255,255,0.06), transparent 70%);
+  position: relative;
+  transition: transform 0.2s;
+}
+.material-row-photo:hover { transform: scale(1.02); }
+.material-row-photo::after {
+  content: "🔍";
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.8rem;
+  opacity: 0.5;
+}
+
+.material-row-info { flex: 1; min-width: 0; }
+.material-row-current { margin-bottom: 1.25rem; }
+
+.swatch-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.swatch-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255,255,255,0.02);
+  transition: border-color 0.2s, background 0.2s;
+}
+.swatch-pick:hover { border-color: rgba(255,255,255,0.25); }
+.swatch-pick.selected { border-color: rgba(232,184,75,0.6); background: rgba(232,184,75,0.08); }
+.swatch-pick-dot {
+  height: 1.4rem;
+  width: 1.4rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255,255,255,0.2);
+  flex-shrink: 0;
+}
+.swatch-pick-name { font-size: 0.75rem; color: rgba(232,236,241,0.85); white-space: nowrap; }
+.swatch-pick-price { font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; color: #E8B84B; white-space: nowrap; }
+
+/* ---------- colorway lightbox ---------- */
+#colorway-lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.85);
+  padding: 2rem;
+}
+#colorway-lightbox.open { display: flex; }
+.colorway-lightbox-art { transform: scale(1.6); margin-bottom: 2rem; }
+#colorway-lightbox-caption {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: #E8B84B;
+  letter-spacing: 0.05em;
+}
+#colorway-lightbox-close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #fff;
+  height: 2.25rem;
+  width: 2.25rem;
+  border-radius: 9999px;
+  font-size: 1rem;
+}
+
+/* ---------- pricing tier: "how it works" demo illustration (not a real video) ---------- */
+.tier-demo {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.tier-demo-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(201,205,211,0.4);
+  margin-bottom: 0.6rem;
+}
+.tier-demo-stage {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.tier-demo-phone {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 3.4rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.tier-demo-arrow {
+  font-size: 0.7rem;
+  color: rgba(232,184,75,0.5);
+  flex-shrink: 0;
+}
+.tier-demo-tap-pulse {
+  position: absolute;
+  height: 1.6rem;
+  width: 1.6rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(232,184,75,0.6);
+  opacity: 0;
+  animation: tierDemoPulse 3s ease-in-out infinite;
+}
+@keyframes tierDemoPulse {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.5); }
+}
+.tier-demo-info {
+  font-size: 8px;
+  line-height: 1.5;
+  color: rgba(201,205,211,0.6);
+  text-align: center;
+  animation: tierDemoReveal 3s ease-in-out infinite;
+}
+@keyframes tierDemoReveal {
+  0%, 40% { opacity: 0; transform: translateY(3px); }
+  60%, 100% { opacity: 1; transform: translateY(0); }
+}
+.tier-demo-caption {
+  position: absolute;
+  bottom: 2px;
+  font-size: 7px;
+  color: rgba(201,205,211,0.3);
+  letter-spacing: 0.03em;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tier-demo-tap-pulse, .tier-demo-info { animation: none; opacity: 1; }
+}

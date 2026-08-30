@@ -42,20 +42,24 @@ const TAGS = [
   },
 ];
 
+// Card materials — 2 groups (Plastic / Metal), each with 3 color/finish
+// variants. Each variant's own `price` is what's charged (not an add-on) —
+// admin can edit any of these 6 prices from the ⚙ Pricing tab.
 const COLORWAYS = [
-  { id: "onyx", name: "Onyx", tagline: "The original.", description: "Lightweight matte black plastic with a single cyan seam — the affordable starting point. Tap-to-share your world in under a second.", price: 11.99, accent: "#22D3EE", gradient: ["#1c1e22", "#0a0a0c"], sheen: "#3a3d42", material: "plastic" },
-  { id: "graphite", name: "Graphite", tagline: "Understated power.", description: "Lightweight charcoal plastic, same durable build as Onyx, with a hairline cyan edge-light and a more understated tone.", price: 15.99, accent: "#38BDF8", gradient: ["#3a3d42", "#121316"], sheen: "#565a61", material: "plastic" },
-  { id: "platinum", name: "Platinum", tagline: "Polished for presence.", description: "Light silver-grey plastic — the brightest of the three plastic finishes, for founders and creators who want to stand out without going full metal.", price: 19.99, accent: "#E8ECF1", gradient: ["#d7dbe0", "#7d828a"], sheen: "#ffffff", material: "plastic" },
-  { id: "cobalt", name: "Cobalt", tagline: "Deep blue, bold move.", description: "Solid anodized metal — heavier and more durable than the plastic finishes, in a rich cobalt-blue coat with a bright white seam.", price: 23.99, accent: "#ffffff", gradient: ["#1e3a8a", "#0b1230"], sheen: "#5b7cf0", material: "metal" },
-  { id: "chrome", name: "Chrome", tagline: "Full reflection.", description: "Solid mirror-polished metal, same durable build as Cobalt — the most reflective, most photographed finish in the lineup.", price: 29.99, accent: "#E8ECF1", gradient: ["#f2f4f6", "#8a9099"], sheen: "#ffffff", material: "metal" },
-  { id: "rose-gold", name: "Rose Gold", tagline: "Warm metal, sharp edges.", description: "Solid brushed metal in a warm rose-gold finish — the premium top-tier option, full metal build with the most refined look.", price: 35.99, accent: "#F5A987", gradient: ["#c07a5e", "#3a1c14"], sheen: "#f0b79b", material: "metal" },
+  { id: "onyx", name: "Onyx", material: "plastic", tagline: "The original.", description: "Lightweight matte black plastic with a single cyan seam — the affordable starting point.", price: 21.00, accent: "#22D3EE", gradient: ["#1c1e22", "#0a0a0c"], sheen: "#3a3d42", photo: null },
+  { id: "jet-black", name: "Jet Black", material: "plastic", tagline: "Deeper, darker, sharper.", description: "A richer black plastic finish with a cool white edge-light — a bolder step up from Onyx.", price: 23.99, accent: "#E8ECF1", gradient: ["#0d0e10", "#000000"], sheen: "#2a2c30", photo: null },
+  { id: "imported-pattern", name: "Imported Pattern", material: "plastic", tagline: "A textured statement.", description: "An imported textured pattern finish on the same durable plastic build — for a card that stands out on sight.", price: 25.99, accent: "#E8B84B", gradient: ["#2a1f3d", "#160f24"], sheen: "#6d5a9e", photo: null },
+
+  { id: "metal-black", name: "Metal Black", material: "metal", tagline: "Solid. Weighty. Serious.", description: "Solid anodized black metal — heavier and more durable than any plastic finish, with a bright silver seam.", price: 25.00, accent: "#E8ECF1", gradient: ["#1a1a1c", "#050506"], sheen: "#3d3d40", photo: null },
+  { id: "black-gold", name: "Black & Gold Plated", material: "metal", tagline: "Understated luxury.", description: "Solid black metal with a gold-plated edge and seam — the same durable build, dressed up.", price: 29.99, accent: "#E8B84B", gradient: ["#1a1a1c", "#050506"], sheen: "#E8B84B", photo: null },
+  { id: "premium-glossy", name: "Premium Glossy", material: "metal", tagline: "Full reflection.", description: "A mirror-polished, high-gloss metal finish that catches the light from every angle — the top-tier option.", price: 33.99, accent: "#E8ECF1", gradient: ["#f2f4f6", "#8a9099"], sheen: "#ffffff", photo: null },
 ];
 
 const TIERS = [
-  { id: "basic", name: "Basic", price: 9.99, tagline: "Just the essentials.", features: ["Phone number", "Email address", "Physical address"] },
-  { id: "standard", name: "Standard", price: 19.99, tagline: "Everything in Basic, plus:", features: ["3 extra contact buttons", "Instagram link", "Facebook link"] },
+  { id: "basic", name: "Basic", price: 9.99, tagline: "Just the essentials.", features: ["Phone number", "Email address", "Office address", "One social media link"] },
+  { id: "standard", name: "Standard", price: 19.99, tagline: "Everything in Basic, plus:", features: ["Two social media links", "Google reviews link"] },
   { id: "premium", name: "Premium", price: 29.99, tagline: "Everything in Standard, plus:", features: ["Website link", "Dynamic / animated background"], highlight: true },
-  { id: "custom", name: "Custom", price: 49.99, tagline: "Everything in Premium, plus:", features: ["Your own logo", "Fully custom card design"] },
+  { id: "custom", name: "Custom", price: 49.99, tagline: "Fully custom — everything, your way:", features: ["Background video of your business", "All your social media links", "Phone number, email & address", "Google reviews link", "Save-contact prompt", "Follow-on-social prompts", "Fully custom card design, printed to your choice"] },
 ];
 
 const LIVE_EVENTS = [

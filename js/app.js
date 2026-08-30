@@ -89,6 +89,15 @@ function initScrollReveal() {
 }
 
 // ---------- lineup ----------
+function initColorwayLightbox() {
+  document.getElementById("colorway-lightbox-close")?.addEventListener("click", () => {
+    document.getElementById("colorway-lightbox").classList.remove("open");
+  });
+  document.getElementById("colorway-lightbox")?.addEventListener("click", (e) => {
+    if (e.target.id === "colorway-lightbox") e.currentTarget.classList.remove("open");
+  });
+}
+
 function renderLineup() {
   const grid = document.getElementById("lineup-grid");
   grid.innerHTML = TAGS_LOCAL.map((tag, i) => `
@@ -127,7 +136,7 @@ function setActiveTag(id) {
 }
 
 // ---------- colorways ----------
-function colorwayArt(c) {
+function colorwayArt(c, big) {
   const isMetal = c.material === "metal";
   const [from, to] = c.gradient;
 
@@ -135,56 +144,124 @@ function colorwayArt(c) {
     ? `repeating-linear-gradient(115deg, rgba(255,255,255,0.16) 0px, rgba(255,255,255,0.16) 2px, transparent 2px, transparent 7px), linear-gradient(160deg, ${c.sheen}, ${from} 45%, ${to} 100%)`
     : `linear-gradient(165deg, ${from}, ${to})`;
 
+  // If a real photo has been set for this variant (drop a file in a
+  // folder and set `photo: "..."` in js/data.js), it's used as-is instead
+  // of the generated card art below.
+  if (c.photo) {
+    return `<img src="${c.photo}" alt="${c.name}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
+  }
+
+  const plateSize = big ? "width:7.5rem;height:11.8rem;" : "";
   return `
-    <div class="thumb thumb-card" style="background:linear-gradient(135deg, ${from}22, ${to});">
-      <div class="card-plate-wrap">
-        <div class="card-plate ${isMetal ? "" : "card-plate-matte"}" style="background:${cardBg};">
-          <div class="card-plate-shine ${isMetal ? "" : "card-plate-shine-soft"}"></div>
-          ${isMetal ? '<div class="card-plate-shine-2"></div>' : ""}
-          <div class="card-plate-rim"></div>
-          <div class="card-plate-seam" style="background:${c.accent};color:${c.accent};"></div>
-          <span class="card-material-tag">${isMetal ? "METAL" : "PLASTIC"}</span>
-        </div>
-        <div class="card-reflection" style="background:${cardBg};"></div>
+    <div class="card-plate-wrap">
+      <div class="card-plate ${isMetal ? "" : "card-plate-matte"}" style="background:${cardBg};${plateSize}">
+        <div class="card-plate-shine ${isMetal ? "" : "card-plate-shine-soft"}"></div>
+        ${isMetal ? '<div class="card-plate-shine-2"></div>' : ""}
+        <div class="card-plate-rim"></div>
+        <div class="card-plate-seam" style="background:${c.accent};color:${c.accent};"></div>
+        <span class="card-material-tag">${isMetal ? "METAL" : "PLASTIC"}</span>
       </div>
+      ${!big ? `<div class="card-reflection" style="background:${cardBg};"></div>` : ""}
     </div>
   `;
 }
 
-function renderColorways() {
-  const grid = document.getElementById("colorways-grid");
-  grid.innerHTML = COLORWAYS_LOCAL.map((c, i) => `
-    <button type="button" class="glass tag-card reveal" data-colorway-id="${c.id}" style="text-align:left;width:100%;">
-      ${colorwayArt(c)}
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1.5rem;margin-bottom:0.25rem;">
-        <span class="mono-label" style="font-size:10px;color:rgba(252,211,77,0.5);">0${i + 1}</span>
-        <span class="price-badge">${fmtGbp(c.price)}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:0.5rem;">
-        <h3 class="font-display" style="font-size:1.25rem;font-weight:600;color:#fff;">${c.name}</h3>
-        <span class="material-badge material-badge-${c.material}">${c.material === "metal" ? "Metal" : "Plastic"}</span>
-      </div>
-      <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">${c.tagline}</p>
-      <p style="margin-top:0.75rem;font-size:0.75rem;line-height:1.6;color:rgba(201,205,211,0.55);">${c.description}</p>
-      <div class="colorway-cta mono-label" style="margin-top:1.25rem;font-size:0.7rem;font-weight:500;color:#E8B84B;">Choose this finish →</div>
-    </button>
-  `).join("");
+// Which variant is currently shown big in each material's row — starts on
+// each material's first variant, changes only when a swatch in that row
+// is clicked (independent of the global order-portal selection, though
+// clicking a swatch updates both).
+const previewedByMaterial = {};
 
-  grid.querySelectorAll("[data-colorway-id]").forEach((btn) => {
+function materialGroups() {
+  const groups = {};
+  COLORWAYS_LOCAL.forEach((c) => {
+    if (!groups[c.material]) groups[c.material] = [];
+    groups[c.material].push(c);
+  });
+  return groups;
+}
+
+const MATERIAL_META = {
+  plastic: { label: "Plastic", blurb: "Lightweight and durable — the affordable starting range." },
+  metal: { label: "Metal", blurb: "Solid metal build — heavier, more durable, more premium." },
+};
+
+function renderColorways() {
+  const wrap = document.getElementById("colorways-grid");
+  const groups = materialGroups();
+
+  wrap.innerHTML = Object.entries(groups).map(([materialId, variants]) => {
+    if (!previewedByMaterial[materialId]) previewedByMaterial[materialId] = variants[0].id;
+    const meta = MATERIAL_META[materialId] || { label: materialId, blurb: "" };
+    return `
+      <div class="glass material-row reveal" data-material="${materialId}">
+        <div class="material-row-photo" data-material-photo="${materialId}" role="button" tabindex="0" title="Click to view larger"></div>
+        <div class="material-row-info">
+          <div class="material-badge material-badge-${materialId}" style="margin-bottom:0.5rem;">${meta.label}</div>
+          <p style="font-size:0.75rem;color:rgba(201,205,211,0.55);margin-bottom:1rem;">${meta.blurb}</p>
+          <div class="material-row-current" data-material-current="${materialId}"></div>
+          <div class="swatch-row" data-material-swatches="${materialId}">
+            ${variants.map((c) => `
+              <button type="button" class="swatch-pick ${c.id === previewedByMaterial[materialId] ? "selected" : ""}" data-colorway-id="${c.id}" data-material="${materialId}">
+                <span class="swatch-pick-dot" style="background:linear-gradient(160deg, ${c.gradient[0]}, ${c.gradient[1]});"></span>
+                <span class="swatch-pick-name">${c.name}</span>
+                <span class="swatch-pick-price">${fmtGbp(c.price)}</span>
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  Object.keys(groups).forEach((materialId) => updateMaterialRow(materialId));
+
+  wrap.querySelectorAll("[data-colorway-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
+      const materialId = btn.dataset.material;
+      previewedByMaterial[materialId] = btn.dataset.colorwayId;
+      updateMaterialRow(materialId);
       pickColorway(btn.dataset.colorwayId);
-      document.getElementById("order")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
-  syncColorwaySelectionUI();
+
+  wrap.querySelectorAll("[data-material-photo]").forEach((el) => {
+    const open = () => openColorwayLightbox(previewedByMaterial[el.dataset.materialPhoto]);
+    el.addEventListener("click", open);
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") open(); });
+  });
+}
+
+function updateMaterialRow(materialId) {
+  const variant = COLORWAYS_LOCAL.find((c) => c.id === previewedByMaterial[materialId]);
+  if (!variant) return;
+  const photoEl = document.querySelector(`[data-material-photo="${materialId}"]`);
+  if (photoEl) photoEl.innerHTML = colorwayArt(variant, true);
+
+  const currentEl = document.querySelector(`[data-material-current="${materialId}"]`);
+  if (currentEl) {
+    currentEl.innerHTML = `
+      <h3 class="font-display" style="font-size:1.25rem;font-weight:600;color:#fff;">${variant.name}</h3>
+      <p style="margin-top:0.2rem;font-size:0.85rem;color:rgba(201,205,211,0.62);">${variant.tagline}</p>
+      <p style="margin-top:0.5rem;font-size:0.75rem;line-height:1.6;color:rgba(201,205,211,0.5);">${variant.description}</p>
+      <div class="price-badge" style="margin-top:0.75rem;display:inline-block;font-size:0.85rem;">${fmtGbp(variant.price)}</div>
+    `;
+  }
+
+  document.querySelectorAll(`[data-material-swatches="${materialId}"] [data-colorway-id]`).forEach((btn) => {
+    btn.classList.toggle("selected", btn.dataset.colorwayId === variant.id);
+  });
+}
+
+function openColorwayLightbox(id) {
+  const variant = COLORWAYS_LOCAL.find((c) => c.id === id);
+  if (!variant) return;
+  document.getElementById("colorway-lightbox-content").innerHTML = colorwayArt(variant, true);
+  document.getElementById("colorway-lightbox-caption").textContent = `${variant.name} — ${fmtGbp(variant.price)}`;
+  document.getElementById("colorway-lightbox").classList.add("open");
 }
 
 function syncColorwaySelectionUI() {
-  document.querySelectorAll("#colorways-grid [data-colorway-id]").forEach((btn) => {
-    const isSel = btn.dataset.colorwayId === selectedColorwayId;
-    btn.classList.toggle("selected", isSel);
-    btn.querySelector(".colorway-cta").textContent = isSel ? "Selected →" : "Choose this finish →";
-  });
   document.querySelectorAll("#order-colorway-swatches [data-colorway-id]").forEach((btn) => {
     btn.classList.toggle("selected", btn.dataset.colorwayId === selectedColorwayId);
   });
@@ -206,6 +283,24 @@ function renderPricing() {
       <p style="font-size:0.75rem;color:rgba(201,205,211,0.62);margin-bottom:1.25rem;">${t.tagline}</p>
       <ul class="tier-features">${t.features.map((f) => `<li>${f}</li>`).join("")}</ul>
       <div class="tier-cta plain">Choose ${t.name}</div>
+
+      <div class="tier-demo">
+        <div class="tier-demo-label">See it in action <span style="opacity:0.5;">(illustration)</span></div>
+        <div class="tier-demo-stage">
+          <div class="tier-demo-phone">
+            <span class="tier-demo-tap-pulse"></span>
+            <span style="font-size:1.1rem;">📱</span>
+            <span class="tier-demo-caption">Their phone</span>
+          </div>
+          <div class="tier-demo-arrow">›››</div>
+          <div class="tier-demo-phone">
+            <div class="tier-demo-info">
+              ${t.features.slice(0, 2).map((f) => `<div>✓ ${f}</div>`).join("")}
+            </div>
+            <span class="tier-demo-caption">Appears instantly</span>
+          </div>
+        </div>
+      </div>
     </button>
   `).join("");
 
@@ -617,6 +712,7 @@ renderOrderPortal();
 initLiveActivity();
 initScrollReveal();
 initTrackOrder();
+initColorwayLightbox();
 
 // Tags (and the rotating 3D cards + Lineup grid built from them) come from
 // Firestore if a backend is configured, otherwise from the local js/data.js
