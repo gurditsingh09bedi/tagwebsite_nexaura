@@ -97,6 +97,7 @@
           From £21.00. Pick a finish below, then a service tier further down —
           your order total updates as you go. Tap any photo to see it larger.
         </p>
+        <div id="offer-banner" style="display:none;margin-top:1.25rem;"></div>
       </div>
       <div id="colorways-grid"></div>
     </div>
@@ -165,6 +166,7 @@
             <div class="desc" id="order-total-desc"></div>
             <div class="amount" id="order-total-amount"></div>
           </div>
+          <div id="order-offer-line" style="display:none;margin-top:-0.75rem;margin-bottom:1.25rem;font-size:0.7rem;color:#4ade80;"></div>
 
           <div class="field" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
             <label class="field" style="margin-bottom:0;">
@@ -290,6 +292,7 @@
           <button type="button" id="admin-tab-tags" class="admin-tab admin-tab-active">Tags</button>
           <button type="button" id="admin-tab-orders" class="admin-tab">Orders <span id="admin-orders-badge" class="admin-tab-badge"></span></button>
           <button type="button" id="admin-tab-pricing" class="admin-tab">Pricing</button>
+          <button type="button" id="admin-tab-offers" class="admin-tab">Offers</button>
         </div>
 
         <div id="admin-panel-tags">
@@ -327,6 +330,25 @@
 
           <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(201,205,211,0.4);margin-bottom:0.5rem;">Service tier prices (£)</div>
           <div id="admin-tier-prices" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+        </div>
+
+        <div id="admin-panel-offers" style="display:none;">
+          <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(201,205,211,0.4);margin-bottom:0.5rem;">Current offers</div>
+          <div id="admin-offer-list" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.75rem;"></div>
+
+          <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(201,205,211,0.4);margin-bottom:0.75rem;">Add an offer</div>
+          <form id="admin-add-offer-form">
+            <input required class="input" placeholder="Title (e.g. Launch Offer)" id="admin-offer-title" style="margin-bottom:0.6rem;" />
+            <div style="display:flex;gap:0.6rem;margin-bottom:0.6rem;">
+              <input required type="number" min="1" max="100" step="1" class="input" placeholder="% off" id="admin-offer-percent" />
+              <input required type="number" min="1" step="1" class="input" placeholder="Min quantity" id="admin-offer-minqty" value="1" />
+            </div>
+            <p style="font-size:0.7rem;color:rgba(201,205,211,0.45);margin-bottom:0.75rem;">
+              Min quantity 1 = applies to everyone. Higher (e.g. 10) = a bulk/business discount that only kicks in at that order size. If more than one offer applies, the customer automatically gets whichever gives the bigger discount.
+            </p>
+            <div id="admin-add-offer-error" style="display:none;font-size:0.75rem;color:#f87171;margin-bottom:0.75rem;"></div>
+            <button type="submit" class="btn-gold" style="width:100%;" id="admin-add-offer-btn">Add offer</button>
+          </form>
         </div>
       </div>
     </div>

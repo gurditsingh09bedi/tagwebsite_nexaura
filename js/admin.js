@@ -2,6 +2,7 @@ import { subscribeTags, addTagRemote, deleteTagRemote, signInAdmin, signOutAdmin
 import { subscribeOrders, updateOrderStatus, ORDER_STAGES, stageIndex } from "./orders-store.js";
 import { sendOrderStatusEmail, isEmailJsConfigured } from "./email-notify.js";
 import { subscribeColorwayPrices, subscribeTierPrices, updateColorwayPrice, updateTierPrice } from "./pricing-store.js";
+import { subscribeOffers, addOffer, updateOffer, deleteOffer } from "./offers-store.js";
 import { isFirebaseConfigured } from "./firebase-config.js";
 import { compressImageToDataUrl } from "./img-utils.js";
 
@@ -41,6 +42,13 @@ subscribeColorwayPrices((colorways) => {
 subscribeTierPrices((tiers) => {
   currentTiers = tiers;
   renderPricingLists();
+});
+
+// ---------- offers ----------
+let currentOffers = [];
+subscribeOffers((offers) => {
+  currentOffers = offers;
+  renderOfferList();
 });
 
 // ---------- orders ----------
@@ -108,6 +116,7 @@ const tabs = {
   tags: { btn: document.getElementById("admin-tab-tags"), panel: document.getElementById("admin-panel-tags") },
   orders: { btn: document.getElementById("admin-tab-orders"), panel: document.getElementById("admin-panel-orders") },
   pricing: { btn: document.getElementById("admin-tab-pricing"), panel: document.getElementById("admin-panel-pricing") },
+  offers: { btn: document.getElementById("admin-tab-offers"), panel: document.getElementById("admin-panel-offers") },
 };
 
 function updateOrdersBadge() {
@@ -155,6 +164,71 @@ function renderTagList() {
 }
 
 // ---------- render: pricing ----------
+// ---------- render: offers ----------
+function renderOfferList() {
+  const list = document.getElementById("admin-offer-list");
+  if (!list) return;
+  if (!currentOffers.length) {
+    list.innerHTML = `<div style="font-size:0.75rem;color:rgba(201,205,211,0.4);">No offers yet.</div>`;
+    return;
+  }
+  list.innerHTML = currentOffers.map((o) => `
+    <div style="display:flex;align-items:center;gap:0.6rem;background:rgba(255,255,255,0.04);border-radius:0.5rem;padding:0.6rem 0.75rem;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.8rem;color:#fff;">${o.title}</div>
+        <div style="font-size:0.7rem;color:rgba(201,205,211,0.45);">${o.percent}% off · min qty ${o.minQuantity || 1}</div>
+      </div>
+      <button type="button" class="offer-toggle-btn ${o.active !== false ? "on" : ""}" data-id="${o.id}">${o.active !== false ? "Active" : "Off"}</button>
+      <button type="button" class="admin-remove-btn" data-id="${o.id}" style="background:none;border:none;color:#f87171;font-size:0.75rem;">Remove</button>
+    </div>
+  `).join("");
+
+  list.querySelectorAll(".offer-toggle-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const offer = currentOffers.find((o) => o.id === btn.dataset.id);
+      try {
+        await updateOffer(btn.dataset.id, { active: !(offer.active !== false) });
+      } catch (err) {
+        alert(err.message || "Couldn't update that offer.");
+      }
+    });
+  });
+  list.querySelectorAll(".admin-remove-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Remove this offer?")) return;
+      try {
+        await deleteOffer(btn.dataset.id);
+      } catch (err) {
+        alert(err.message || "Couldn't remove that offer.");
+      }
+    });
+  });
+}
+
+document.getElementById("admin-add-offer-form")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById("admin-add-offer-error");
+  errorEl.style.display = "none";
+  const btn = document.getElementById("admin-add-offer-btn");
+  btn.disabled = true;
+  btn.textContent = "Adding...";
+  try {
+    await addOffer({
+      title: document.getElementById("admin-offer-title").value,
+      percent: Number(document.getElementById("admin-offer-percent").value),
+      minQuantity: Number(document.getElementById("admin-offer-minqty").value) || 1,
+      active: true,
+    });
+    document.getElementById("admin-add-offer-form").reset();
+    document.getElementById("admin-offer-minqty").value = 1;
+  } catch (err) {
+    errorEl.textContent = err.message || "Something went wrong adding that offer.";
+    errorEl.style.display = "block";
+  }
+  btn.disabled = false;
+  btn.textContent = "Add offer";
+});
+
 function renderPricingLists() {
   const colorwayList = document.getElementById("admin-colorway-prices");
   if (colorwayList) {

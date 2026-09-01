@@ -73,6 +73,22 @@ them, and check the form's Settings tab for a spam-filter toggle to turn
 down for future submissions. This doesn't affect the Orders panel above —
 that's a separate, always-reliable path regardless of what Formspree does.
 
+## Managing offers live (Offers tab)
+
+The ⚙ panel's **Offers** tab lets you add/remove/toggle promo discounts —
+by default the site ships with two: a 25% "Launch Offer" (applies to
+everyone) and a 50% "Bulk Business Discount" (kicks in at 10+ tags in one
+order). Both show as pills near the Colorways section and are applied
+automatically to the Order form's total — if more than one offer would
+apply to a given order, the customer automatically gets whichever is
+bigger (they're never stacked/added together).
+
+To add your own: give it a title, a % off, and a minimum quantity (1 =
+applies to everyone; higher = a bulk discount that only kicks in at that
+order size). Toggle any offer off without deleting it, or remove it
+entirely. Changes apply instantly, sitewide, no re-upload needed — same
+Firebase setup as tags/pricing above.
+
 ## Editing prices live (Pricing tab)
 
 The ⚙ **Manage** panel has a third tab, **Pricing** — edit any colorway's
@@ -169,6 +185,10 @@ Firebase backend (10 minutes, one time):
          allow write: if request.auth != null;
        }
        match /tiers/{id} {
+         allow read: if true;
+         allow write: if request.auth != null;
+       }
+       match /offers/{id} {
          allow read: if true;
          allow write: if request.auth != null;
        }

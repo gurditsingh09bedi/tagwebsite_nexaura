@@ -832,3 +832,39 @@ footer {
   border-radius: 9999px;
   font-size: 1rem;
 }
+
+/* ---------- promo offer pills ---------- */
+.offer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.5rem 0.9rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(74,222,128,0.4);
+  background: rgba(74,222,128,0.1);
+  color: #4ade80;
+}
+.offer-pill-bulk {
+  border-color: rgba(232,184,75,0.4);
+  background: rgba(232,184,75,0.1);
+  color: #E8B84B;
+}
+
+/* ---------- admin: offers tab ---------- */
+.offer-toggle-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: rgba(201,205,211,0.5);
+  flex-shrink: 0;
+}
+.offer-toggle-btn.on {
+  border-color: rgba(74,222,128,0.4);
+  background: rgba(74,222,128,0.1);
+  color: #4ade80;
+}

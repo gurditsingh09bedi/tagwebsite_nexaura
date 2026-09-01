@@ -62,6 +62,14 @@ const TIERS = [
   { id: "custom", name: "Custom", price: 49.99, tagline: "Fully custom — everything, your way:", features: ["Background video of your business", "All your social media links", "Phone number, email & address", "Google reviews link", "Save-contact prompt", "Follow-on-social prompts", "Fully custom card design, printed to your choice"] },
 ];
 
+// Default promo offers — used until/unless the admin panel's Offers tab
+// saves something to the backend. A plain minQuantity:1 offer applies to
+// everyone; a higher minQuantity is a bulk/business discount.
+const OFFERS = [
+  { id: "launch-offer", title: "Launch Offer", percent: 25, minQuantity: 1, active: true },
+  { id: "bulk-business", title: "Bulk Business Discount", percent: 50, minQuantity: 10, active: true },
+];
+
 const LIVE_EVENTS = [
   { icon: "📡", text: "Someone in Dubai just scanned a Tag" },
   { icon: "📦", text: "New order — 12 units to London" },
@@ -91,6 +99,7 @@ const ORDER_STAGES = [
 window.TAGS = TAGS;
 window.COLORWAYS = COLORWAYS;
 window.TIERS = TIERS;
+window.OFFERS = OFFERS;
 window.LIVE_EVENTS = LIVE_EVENTS;
 window.ORDER_STAGES = ORDER_STAGES;
 window.fmtGbp = fmtGbp;

@@ -4,6 +4,7 @@ import { submitOrder, ordersBackendAvailable, getOrderById, ORDER_STAGES, stageI
 import { compressImageToDataUrl } from "./img-utils.js";
 import { sendOrderStatusEmail, isEmailJsConfigured } from "./email-notify.js";
 import { subscribeColorwayPrices, subscribeTierPrices } from "./pricing-store.js";
+import { subscribeOffers, bestOfferFor } from "./offers-store.js";
 
 // Every order request opens the visitor's email app addressed here —
 // change this if the inbox should ever be different.
@@ -32,6 +33,7 @@ function isFormspreeConfigured() {
 let TAGS_LOCAL = window.TAGS; // replaced live if a Firestore backend is configured (see tags-store.js)
 let COLORWAYS_LOCAL = window.COLORWAYS;
 let TIERS_LOCAL = window.TIERS;
+let OFFERS_LOCAL = window.OFFERS;
 const LIVE_EVENTS_LOCAL = window.LIVE_EVENTS;
 const ORDER_STAGES_LOCAL = window.ORDER_STAGES;
 const fmtGbp = window.fmtGbp;
@@ -441,7 +443,9 @@ function renderOrderPortal() {
     const colorway = COLORWAYS_LOCAL.find((c) => c.id === selectedColorwayId);
     const tier = TIERS_LOCAL.find((t) => t.id === selectedTierId);
     const qty = Math.max(1, Number(document.getElementById("order-qty").value) || 1);
-    const total = (colorway.price + tier.price) * qty;
+    const subtotal = (colorway.price + tier.price) * qty;
+    const offer = bestOfferFor(OFFERS_LOCAL, qty);
+    const total = offer ? subtotal - subtotal * (offer.percent / 100) : subtotal;
     const name = document.getElementById("order-name").value;
     const email = document.getElementById("order-email").value;
     const message = document.getElementById("order-message").value;
@@ -615,16 +619,51 @@ function showOrderSuccess(form, success, colorway, tier, total, sentDirectly, ha
   success.style.display = "block";
 }
 
+function renderOfferBanner() {
+  const banner = document.getElementById("offer-banner");
+  if (!banner) return;
+  const general = OFFERS_LOCAL.find((o) => o.active !== false && (o.minQuantity || 1) <= 1);
+  const bulk = OFFERS_LOCAL
+    .filter((o) => o.active !== false && (o.minQuantity || 1) > 1)
+    .sort((a, b) => b.percent - a.percent)[0];
+
+  if (!general && !bulk) {
+    banner.style.display = "none";
+    return;
+  }
+  banner.style.display = "flex";
+  banner.style.gap = "0.6rem";
+  banner.style.flexWrap = "wrap";
+  banner.innerHTML = `
+    ${general ? `<span class="offer-pill">🏷 ${general.title} — ${general.percent}% off</span>` : ""}
+    ${bulk ? `<span class="offer-pill offer-pill-bulk">📦 Order ${bulk.minQuantity}+ for your business — ${bulk.percent}% off</span>` : ""}
+  `;
+}
+
 function updateOrderTotal() {
   const colorway = COLORWAYS_LOCAL.find((c) => c.id === selectedColorwayId);
   const tier = TIERS_LOCAL.find((t) => t.id === selectedTierId);
   const qty = Math.max(1, Number(document.getElementById("order-qty")?.value) || 1);
   const unitTotal = colorway.price + tier.price;
-  const total = unitTotal * qty;
+  const subtotal = unitTotal * qty;
+
+  const offer = bestOfferFor(OFFERS_LOCAL, qty);
+  const discountAmount = offer ? subtotal * (offer.percent / 100) : 0;
+  const total = subtotal - discountAmount;
+
   const desc = document.getElementById("order-total-desc");
   const amount = document.getElementById("order-total-amount");
+  const offerLine = document.getElementById("order-offer-line");
   if (desc) desc.textContent = `${colorway.name} (${fmtGbp(colorway.price)}) + ${tier.name} (${fmtGbp(tier.price)})${qty > 1 ? ` × ${qty}` : ""}`;
-  if (amount) amount.textContent = fmtGbp(total);
+  if (amount) {
+    amount.innerHTML = offer
+      ? `<span style="text-decoration:line-through;opacity:0.4;font-size:0.75em;margin-right:0.4rem;">${fmtGbp(subtotal)}</span>${fmtGbp(total)}`
+      : fmtGbp(total);
+  }
+  if (offerLine) {
+    offerLine.textContent = offer ? `🏷 ${offer.title} — ${offer.percent}% off applied` : "";
+    offerLine.style.display = offer ? "block" : "none";
+  }
   const submitBtn = document.getElementById("order-submit-btn");
   if (submitBtn) submitBtn.textContent = `Submit Request — ${fmtGbp(total)}`;
 }
@@ -775,4 +814,10 @@ subscribeTierPrices((tiers) => {
   renderPricing();
   renderOrderPricingControls();
   initScrollReveal();
+});
+
+subscribeOffers((offers) => {
+  OFFERS_LOCAL = offers;
+  renderOfferBanner();
+  updateOrderTotal();
 });
