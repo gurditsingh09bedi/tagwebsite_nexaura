@@ -30,6 +30,48 @@ function isFormspreeConfigured() {
   return FORMSPREE_ENDPOINT.startsWith("https://formspree.io/");
 }
 
+// Real card payments — handled entirely by Stripe via a small Firebase
+// Cloud Function (customer never enters card details on this site). Set
+// to "" to disable real payment and fall back to the old "submit request,
+// pay later" flow.
+const CREATE_CHECKOUT_SESSION_URL = "https://us-central1-nexaura-tags.cloudfunctions.net/createCheckoutSession";
+function isPaymentConfigured() {
+  return !!CREATE_CHECKOUT_SESSION_URL;
+}
+
+// Calls the Cloud Function to start a Stripe Checkout session for this
+// order, then sends the browser there. Returns true if the redirect
+// happened (caller should stop — the page is navigating away), false if
+// it failed (caller should show an error and let them retry).
+async function goToStripeCheckout({ orderId, amount, email, description }) {
+  try {
+    const successUrl = `${window.location.origin}${window.location.pathname}?payment=success&order=${encodeURIComponent(orderId)}#track-order`;
+    const cancelUrl = `${window.location.origin}${window.location.pathname}?payment=cancelled#order`;
+    const res = await fetch(CREATE_CHECKOUT_SESSION_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId,
+        amountPence: Math.round(amount * 100),
+        email,
+        description,
+        successUrl,
+        cancelUrl,
+      }),
+    });
+    const data = await res.json();
+    if (res.ok && data.url) {
+      window.location.href = data.url;
+      return true;
+    }
+    console.error("Stripe session creation failed:", data.error || res.status);
+    return false;
+  } catch (err) {
+    console.error("Couldn't reach the payment service:", err);
+    return false;
+  }
+}
+
 let TAGS_LOCAL = window.TAGS; // replaced live if a Firestore backend is configured (see tags-store.js)
 let COLORWAYS_LOCAL = window.COLORWAYS;
 let TIERS_LOCAL = window.TIERS;
@@ -191,13 +233,17 @@ const MATERIAL_META = {
 function renderColorways() {
   const wrap = document.getElementById("colorways-grid");
   const groups = materialGroups();
+  const generalOffer = OFFERS_LOCAL.find((o) => o.active !== false && (o.minQuantity || 1) <= 1);
 
   wrap.innerHTML = Object.entries(groups).map(([materialId, variants]) => {
     if (!previewedByMaterial[materialId]) previewedByMaterial[materialId] = variants[0].id;
     const meta = MATERIAL_META[materialId] || { label: materialId, blurb: "" };
     return `
       <div class="glass material-row reveal" data-material="${materialId}">
-        <div class="material-row-photo" data-material-photo="${materialId}" role="button" tabindex="0" title="Click to view larger"></div>
+        <div class="material-row-photo-wrap">
+          <div class="material-row-photo" data-material-photo="${materialId}" role="button" tabindex="0" title="Click to view larger"></div>
+          ${generalOffer ? `<span class="sale-ribbon">${generalOffer.percent}% OFF</span>` : ""}
+        </div>
         <div class="material-row-info">
           <div class="material-badge material-badge-${materialId}" style="margin-bottom:0.5rem;">${meta.label}</div>
           <p style="font-size:0.75rem;color:rgba(201,205,211,0.55);margin-bottom:1rem;">${meta.blurb}</p>
@@ -505,6 +551,27 @@ function renderOrderPortal() {
       });
     }
 
+    // If real payment is set up, send them to Stripe's secure checkout now
+    // instead of showing success immediately — the order is already saved
+    // above (status "placed"), and gets marked "Payment Confirmed" by the
+    // stripeWebhook Cloud Function the instant Stripe confirms the charge,
+    // independent of whether their browser makes it back here.
+    if (isPaymentConfigured() && orderId && total > 0) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Redirecting to secure payment...";
+      const redirected = await goToStripeCheckout({
+        orderId,
+        amount: total,
+        email,
+        description: `${finishLabel} + ${tierLabel}${qty > 1 ? ` × ${qty}` : ""}`,
+      });
+      if (redirected) return; // browser is navigating to Stripe now
+      submitBtn.disabled = false;
+      updateOrderTotal();
+      alert("Couldn't start payment — please try again, or contact us directly.");
+      return;
+    }
+
     if (isFormspreeConfigured()) {
       // Sends the whole thing — including the attached logo/photo — to
       // Formspree, which forwards it straight to ORDER_INBOX by email.
@@ -722,6 +789,79 @@ function renderStageTracker(order) {
   `;
 }
 
+// ---------- return from Stripe checkout ----------
+// After a successful payment, Stripe sends the browser back here with
+// ?payment=success&order=<id> — this shows a proper confirmation and only
+// NOW notifies the business + emails the customer a payment receipt
+// (versus the earlier "order placed" email sent before they'd paid).
+// The order's actual status in Firestore is set by the stripeWebhook
+// Cloud Function server-side, independent of this — this is just the
+// customer-facing confirmation on return.
+async function handleStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const paymentStatus = params.get("payment");
+  const orderId = params.get("order");
+  if (!paymentStatus) return;
+
+  if (paymentStatus === "success" && orderId) {
+    const order = await getOrderById(orderId).catch(() => null);
+    const form = document.getElementById("order-form");
+    const success = document.getElementById("order-success");
+    if (form) form.style.display = "none";
+    if (success) {
+      success.style.display = "block";
+      success.innerHTML = `
+        <div style="font-size:1.75rem;margin-bottom:0.75rem;">✅</div>
+        <p style="font-size:1.125rem;color:#fff;">Payment successful!</p>
+        <p style="margin-top:0.25rem;font-size:0.875rem;color:rgba(201,205,211,0.62);">
+          Order <strong style="color:#E8B84B;">${orderId}</strong>${order ? ` — ${order.finish} · ${order.tier} · ${order.total}` : ""} is confirmed.
+          A receipt has been sent to your email.
+        </p>
+      `;
+    }
+    setTimeout(() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+
+    if (order) {
+      if (isFormspreeConfigured()) {
+        try {
+          const data = new FormData();
+          data.append("name", order.name || "");
+          data.append("email", order.email || "");
+          data.append("finish", order.finish || "");
+          data.append("tier", order.tier || "");
+          data.append("quantity", order.quantity || 1);
+          data.append("total", order.total || "");
+          data.append("note", `PAYMENT CONFIRMED — order ${orderId}`);
+          await fetch(FORMSPREE_ENDPOINT, { method: "POST", headers: { Accept: "application/json" }, body: data });
+        } catch (err) {
+          console.error("Payment-confirmed notification to business didn't go out:", err);
+        }
+      }
+      if (order.email && isEmailJsConfigured()) {
+        const trackingLink = `${window.location.origin}${window.location.pathname}#track-order`;
+        sendOrderStatusEmail({
+          toEmail: order.email,
+          customerName: order.name,
+          orderId,
+          statusLabel: ORDER_STAGES[1].label,
+          statusNote: ORDER_STAGES[1].customerNote,
+          finish: order.finish,
+          tier: order.tier,
+          quantity: order.quantity,
+          total: order.total,
+          trackingLink,
+        }).catch((err) => console.error("Payment-confirmed email to customer didn't go out:", err));
+      }
+    }
+  } else if (paymentStatus === "cancelled") {
+    alert("Payment was cancelled — your order is saved, and you can try paying again anytime from here.");
+    document.getElementById("order")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // Clean the URL so refreshing the page doesn't replay this.
+  window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+}
+
 function initTrackOrder() {
   const form = document.getElementById("track-order-form");
   const input = document.getElementById("track-order-input");
@@ -781,6 +921,7 @@ initScrollReveal();
 initTrackOrder();
 initColorwayLightbox();
 initTierDemoModal();
+handleStripeReturn();
 
 // Tags (and the rotating 3D cards + Lineup grid built from them) come from
 // Firestore if a backend is configured, otherwise from the local js/data.js
@@ -819,5 +960,7 @@ subscribeTierPrices((tiers) => {
 subscribeOffers((offers) => {
   OFFERS_LOCAL = offers;
   renderOfferBanner();
+  renderColorways();
+  initScrollReveal();
   updateOrderTotal();
 });

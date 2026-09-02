@@ -868,3 +868,44 @@ footer {
   background: rgba(74,222,128,0.1);
   color: #4ade80;
 }
+
+/* ---------- sale ribbon on colorway card photos ---------- */
+.material-row-photo-wrap { position: relative; flex-shrink: 0; }
+.sale-ribbon {
+  position: absolute;
+  top: 0.9rem;
+  left: -0.6rem;
+  z-index: 2;
+  background: linear-gradient(90deg, #4ade80, #22c55e);
+  color: #052e16;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.8rem 0.3rem 0.6rem;
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 4px 14px rgba(34,197,94,0.5);
+  animation: ribbonPulse 2.4s ease-in-out infinite;
+}
+.sale-ribbon::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 100%;
+  border-width: 0.3rem 0 0 0.6rem;
+  border-style: solid;
+  border-color: transparent transparent transparent #14532d;
+}
+@keyframes ribbonPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) { .sale-ribbon { animation: none; } }
+
+/* boost the general-offer pill specifically so it reads as the headline */
+.offer-pill:not(.offer-pill-bulk) {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.65rem 1.15rem;
+  box-shadow: 0 0 24px rgba(74,222,128,0.35);
+}

@@ -73,6 +73,20 @@ them, and check the form's Settings tab for a spam-filter toggle to turn
 down for future submissions. This doesn't affect the Orders panel above —
 that's a separate, always-reliable path regardless of what Formspree does.
 
+## Terms, Privacy, and payment security
+
+`terms.html` and `privacy.html` are two standalone pages, linked from the
+footer and from a required checkbox on the Order form. They cover: what
+data is collected, cookies/browser storage actually used (Firebase Auth's
+admin session, Google Fonts — nothing else), which third-party services
+touch order data (Firebase, Formspree, EmailJS, Stripe), and that card
+payments are handled entirely by Stripe (PCI-DSS Level 1 certified) —
+card details never reach Nexaura's site or database.
+
+These are genuinely plain-English legal pages, not a substitute for a
+solicitor's review — if a lawyer suggests changes, edit the two files
+directly (they're independent from `index.html`, same styling reused).
+
 ## Managing offers live (Offers tab)
 
 The ⚙ panel's **Offers** tab lets you add/remove/toggle promo discounts —
