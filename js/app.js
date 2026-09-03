@@ -220,7 +220,7 @@ function colorwayArt(c, big) {
         ${isMetal ? '<div class="card-plate-shine-2"></div>' : ""}
         <div class="card-plate-rim"></div>
         <div class="card-plate-seam" style="background:${c.accent};color:${c.accent};"></div>
-        <span class="card-material-tag">${isMetal ? "METAL" : "PLASTIC"}</span>
+        <span class="card-material-tag">${isMetal ? "METAL" : "PVC"}</span>
       </div>
       ${!big ? `<div class="card-reflection" style="background:${cardBg};"></div>` : ""}
     </div>
@@ -243,7 +243,7 @@ function materialGroups() {
 }
 
 const MATERIAL_META = {
-  plastic: { label: "Plastic", blurb: "Lightweight and durable — the affordable starting range." },
+  plastic: { label: "PVC", blurb: "Lightweight and durable — the affordable starting range." },
   metal: { label: "Metal", blurb: "Solid metal build — heavier, more durable, more premium." },
 };
 

@@ -30,7 +30,7 @@ Everything editable lives in **`js/data.js`** — one file, plain arrays:
   with `name`, `tagline`, `description`, `accent`, `baseColor`, `url`, and
   optionally `logo: "logos/yourfile.png"` (drop the image in `logos/`
   first).
-- `COLORWAYS` — 6 finishes grouped into 2 materials (Plastic: Onyx, Jet
+- `COLORWAYS` — 6 finishes grouped into 2 materials (PVC: Onyx, Jet
   Black, Imported Pattern; Metal: Metal Black, Black & Gold Plated,
   Premium Glossy), each with its own price. The Colorways section shows
   one big photo per material with a row of small swatches next to it —
@@ -243,7 +243,7 @@ instead of showing a login form.
   React-Three-Fiber-only helper. Still metallic, still glowing, still
   orbits and reacts to hover/click the same way.
 
-Everything else — the aurora background, plastic/metal colorways with live order
+Everything else — the aurora background, PVC/metal colorways with live order
 total, the pricing tiers, the cinematic intro, the real JAPP/Nexaura logos
 on the rotating cards — is the same as the last version, just running
 without a build step.
