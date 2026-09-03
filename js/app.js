@@ -133,6 +133,23 @@ function initScrollReveal() {
 }
 
 // ---------- lineup ----------
+// A clean, on-brand notification instead of the browser's native alert()
+// — which always shows the page's raw URL in its title bar and looks
+// unpolished for a site actually taking payments.
+function showNotice(message, tone) {
+  let el = document.getElementById("site-notice");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "site-notice";
+    document.body.appendChild(el);
+  }
+  el.className = `site-notice ${tone === "error" ? "site-notice-error" : "site-notice-info"}`;
+  el.textContent = message;
+  el.classList.add("show");
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => el.classList.remove("show"), 5000);
+}
+
 function initColorwayLightbox() {
   document.getElementById("colorway-lightbox-close")?.addEventListener("click", () => {
     document.getElementById("colorway-lightbox").classList.remove("open");
@@ -469,7 +486,7 @@ function renderOrderPortal() {
     const file = fileInput.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      alert("Please pick an image under 5MB.");
+      showNotice("Please pick an image under 5MB.", "error");
       fileInput.value = "";
       return;
     }
@@ -568,7 +585,7 @@ function renderOrderPortal() {
       if (redirected) return; // browser is navigating to Stripe now
       submitBtn.disabled = false;
       updateOrderTotal();
-      alert("Couldn't start payment — please try again, or contact us directly.");
+      showNotice("Couldn't start payment — please try again, or contact us directly.", "error");
       return;
     }
 
@@ -603,12 +620,12 @@ function renderOrderPortal() {
         } else {
           submitBtn.disabled = false;
           updateOrderTotal();
-          alert("Something went wrong sending your request — please try again, or email us directly.");
+          showNotice("Something went wrong sending your request — please try again, or email us directly.", "error");
         }
       } catch (err) {
         submitBtn.disabled = false;
         updateOrderTotal();
-        alert("Couldn't reach the form service — check your connection and try again.");
+        showNotice("Couldn't reach the form service — check your connection and try again.", "error");
       }
       return;
     }
@@ -854,7 +871,7 @@ async function handleStripeReturn() {
       }
     }
   } else if (paymentStatus === "cancelled") {
-    alert("Payment was cancelled — your order is saved, and you can try paying again anytime from here.");
+    showNotice("Payment was cancelled — your order is saved, you can try paying again anytime.", "info");
     document.getElementById("order")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 

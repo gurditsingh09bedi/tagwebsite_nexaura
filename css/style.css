@@ -909,3 +909,37 @@ footer {
   padding: 0.65rem 1.15rem;
   box-shadow: 0 0 24px rgba(74,222,128,0.35);
 }
+
+/* ---------- clean toast notification (replaces browser alert()) ---------- */
+.site-notice {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(1rem);
+  z-index: 300;
+  max-width: 90vw;
+  padding: 0.9rem 1.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.site-notice.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+.site-notice-error {
+  background: rgba(30, 15, 15, 0.95);
+  border: 1px solid rgba(248,113,113,0.4);
+  color: #f87171;
+}
+.site-notice-info {
+  background: rgba(15, 22, 30, 0.95);
+  border: 1px solid rgba(232,184,75,0.4);
+  color: #E8B84B;
+}
